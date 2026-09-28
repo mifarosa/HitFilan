@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>HitFilan</title>
+  <meta name="description" content="Ev için kondisyon bisikleti aralık zamanlayıcısı ve dumbbell/vücut ağırlığı devreleri.">
+  <meta name="theme-color" content="#101418">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="HitFilan">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Hit<span>Filan</span></h1>
+  </header>
+
+  <main>
+    <section id="view-home" class="view active" aria-label="Antrenmanlar">
+      <div id="week-summary" class="card week"></div>
+
+      <h2 class="section-title">Kondisyon Bisikleti</h2>
+      <div id="bike-list" class="program-list"></div>
+
+      <h2 class="section-title">Kuvvet &amp; Yağ Yakım</h2>
+      <div id="circuit-list" class="program-list"></div>
+
+      <div class="card tip">
+        <h3>Haftalık öneri</h3>
+        <ul>
+          <li>Haftada 3 gün <b>40 dk Bisiklet Akışı</b>.</li>
+          <li>Araya 2 gün <b>Dumbbell Yağ Yakıcı</b> ya da <b>Kısa Kuvvet</b>.</li>
+          <li>Enerjin varsa bisikletten sonra <b>Core Bitirici</b> ekle.</li>
+          <li>Kilo vermenin asıl anahtarı beslenme: hafif kalori açığı + yeterli protein.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="view-exercises" class="view" aria-label="Hareketler">
+      <div class="chips" id="exercise-filter" role="tablist">
+        <button class="chip active" data-filter="all">Tümü</button>
+        <button class="chip" data-filter="bodyweight">Vücut ağırlığı</button>
+        <button class="chip" data-filter="dumbbell">Dumbbell</button>
+      </div>
+      <div id="exercise-list" class="exercise-list"></div>
+    </section>
+
+    <section id="view-history" class="view" aria-label="Geçmiş">
+      <div id="history-summary" class="card week"></div>
+      <div id="history-list"></div>
+    </section>
+
+    <section id="view-settings" class="view" aria-label="Ayarlar">
+      <form id="settings-form" class="card settings">
+        <label class="row">
+          <span>Vücut ağırlığın (kg)<small>Kalori tahmini için</small></span>
+          <input type="number" name="weightKg" min="30" max="250" step="0.5" inputmode="decimal">
+        </label>
+        <label class="row">
+          <span>Dumbbell ağırlığı (kg)</span>
+          <input type="number" name="dumbbellKg" min="0" max="50" step="0.5" inputmode="decimal">
+        </label>
+        <label class="row switch">
+          <span>Bip sesleri<small>Geçişlerden önce 3-2-1 ve geçiş sinyali</small></span>
+          <input type="checkbox" name="beeps">
+        </label>
+        <label class="row switch">
+          <span>Sesli anons<small>Türkçe anons; bazı telefonlarda müziği anlık kısar</small></span>
+          <input type="checkbox" name="voice">
+        </label>
+        <label class="row switch">
+          <span>Titreşim</span>
+          <input type="checkbox" name="vibrate">
+        </label>
+        <label class="row switch">
+          <span>Ekranı açık tut<small>Antrenman sırasında ekran kapanmaz</small></span>
+          <input type="checkbox" name="wakeLock">
+        </label>
+      </form>
+      <button type="button" class="btn ghost full" id="test-sound">Sesi test et</button>
+      <button type="button" class="btn danger full" id="clear-history">Geçmişi temizle</button>
+      <p class="fineprint">
+        Müzik için: önce müzik uygulamanda çalmaya başla, sonra HitFilan’a geç.
+        Bip sesleri müziğin üzerine çalar. Telefonu ana ekrana ekleyerek uygulama gibi kullanabilirsin.
+      </p>
+    </section>
+  </main>
+
+  <nav class="tabbar" aria-label="Menü">
+    <button class="tab active" data-view="home">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="17" r="3.5"/><circle cx="18" cy="17" r="3.5"/><path d="M6 17l4-8h5l3 8M10 9l3 8M13 5h3"/></svg>
+      <span>Antrenman</span>
+    </button>
+    <button class="tab" data-view="exercises">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10v4M6 7v10M18 7v10M21 10v4M6 12h12"/></svg>
+      <span>Hareketler</span>
+    </button>
+    <button class="tab" data-view="history">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+      <span>Geçmiş</span>
+    </button>
+    <button class="tab" data-view="settings">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>
+      <span>Ayarlar</span>
+    </button>
+  </nav>
+
+  <dialog id="program-sheet" class="sheet"></dialog>
+
+  <div id="runner" class="runner" hidden>
+    <div class="runner-top">
+      <button class="icon-btn" id="runner-close" aria-label="Antrenmanı bitir">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <div class="runner-title" id="runner-title"></div>
+      <button class="icon-btn" id="runner-sound" aria-label="Sesi aç/kapat">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="wave" d="M16 9a4 4 0 010 6M18.5 6.5a7.5 7.5 0 010 11"/><path class="mute" d="M16 9l5 6M21 9l-5 6"/></svg>
+      </button>
+    </div>
+
+    <div class="timeline" id="timeline"><div class="playhead" id="playhead"></div></div>
+
+    <div class="runner-main">
+      <div class="step-tag" id="step-tag"></div>
+      <div class="step-label" id="step-label"></div>
+      <div class="ring">
+        <svg viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="ring-bg" cx="60" cy="60" r="54"/>
+          <circle class="ring-fg" id="ring-fg" cx="60" cy="60" r="54"/>
+        </svg>
+        <div class="ring-time" id="step-time">0:00</div>
+      </div>
+      <p class="step-hint" id="step-hint"></p>
+    </div>
+
+    <div class="next-step" id="next-step"></div>
+
+    <div class="totals">
+      <div><small>Geçen</small><b id="t-elapsed">0:00</b></div>
+      <div><small>Kalan</small><b id="t-remaining">0:00</b></div>
+      <div><small>~kcal</small><b id="t-kcal">0</b></div>
+    </div>
+
+    <div class="controls">
+      <button class="icon-btn" id="btn-prev" aria-label="Önceki">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5v14M19 5l-9 7 9 7z"/></svg>
+      </button>
+      <button class="play-btn" id="btn-play" aria-label="Başlat/Duraklat">
+        <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg>
+        <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h4v16H7zM14 4h4v16h-4z"/></svg>
+      </button>
+      <button class="icon-btn" id="btn-next" aria-label="Sonraki">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 5v14M5 5l9 7-9 7z"/></svg>
+      </button>
+    </div>
+
+    <div class="finish" id="finish" hidden>
+      <div class="finish-card">
+        <div class="finish-badge">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>
+        </div>
+        <h2>Tebrikler!</h2>
+        <p id="finish-text"></p>
+        <button class="btn primary full" id="finish-close">Kapat</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
