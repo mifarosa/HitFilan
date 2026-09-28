@@ -1,5 +1,7 @@
-import { EXERCISES, LEVELS, PROGRAMS, getProgram } from './data.js';
-import { buildSteps, totalSeconds, estimateKcal, formatTime } from './steps.js';
+import { EXERCISES, LEVELS, PROGRAMS, BIKE_MINUTES, getProgram } from './data.js';
+import {
+  buildSteps, totalSeconds, estimateKcal, formatTime, programInfo,
+} from './steps.js';
 import { SequenceTimer } from './timer.js';
 import { unlockAudio, beeps, speak, vibrate } from './audio.js';
 import {
@@ -42,14 +44,40 @@ function minutesLabel(sec) {
   return `${Math.round(sec / 60)} dk`;
 }
 
-function circuitOpts(program) {
-  return { work: program.work, rest: program.rest, rounds: program.rounds };
+function defaultOpts(program) {
+  if (program.kind === 'circuit') return { work: program.work, rest: program.rest, rounds: program.rounds };
+  if (program.kind === 'combo') return { bikeId: settings.bikeId };
+  return {};
+}
+
+// Bike programs are picked by duration; the choice is remembered in settings.
+function selectedBike() {
+  return getProgram(settings.bikeId) || getProgram('bike40');
+}
+
+function durationChips() {
+  return `
+    <div class="chips duration" role="group" aria-label="Bisiklet süresi">
+      ${BIKE_MINUTES.map((m) => {
+        const id = `bike${m}`;
+        const on = id === selectedBike().id;
+        return `<button type="button" class="chip ${on ? 'active' : ''}" data-bike="${id}" aria-pressed="${on}">${m === 60 ? '1 saat' : `${m} dk`}</button>`;
+      }).join('')}
+    </div>`;
+}
+
+function selectBike(id) {
+  settings = { ...settings, bikeId: id };
+  saveSettings(settings);
+  renderHome();
 }
 
 /* ---------- Home ---------- */
 
 function programCard(p) {
-  const steps = buildSteps(p.id);
+  const opts = defaultOpts(p);
+  const info = programInfo(p.id, opts);
+  const steps = buildSteps(p.id, opts);
   const secs = totalSeconds(steps);
   const kcal = estimateKcal(steps, settings.weightKg);
   let meta = `${minutesLabel(secs)} · ~${kcal} kcal`;
@@ -60,17 +88,19 @@ function programCard(p) {
   return `
     <button class="card program" data-program="${p.id}">
       <div class="program-head">
-        <h3>${esc(p.name)}</h3>
+        <h3>${esc(info.name)}</h3>
         <span class="go" aria-hidden="true">›</span>
       </div>
-      <p>${esc(p.desc)}</p>
+      <p>${esc(info.desc)}</p>
       <div class="mini-timeline">${timelineHTML(steps)}</div>
       <div class="meta">${meta}</div>
     </button>`;
 }
 
 function renderHome() {
-  $('#bike-list').innerHTML = PROGRAMS.filter((p) => p.kind !== 'circuit').map(programCard).join('');
+  $('#bike-list').innerHTML = durationChips()
+    + [selectedBike(), getProgram('combo')].map(programCard).join('');
+  $$('#bike-list [data-bike]').forEach((c) => c.addEventListener('click', () => selectBike(c.dataset.bike)));
   $('#circuit-list').innerHTML = PROGRAMS.filter((p) => p.kind === 'circuit').map(programCard).join('');
   $$('[data-program]').forEach((el) => el.addEventListener('click', () => openSheet(el.dataset.program)));
   renderWeek($('#week-summary'));
@@ -162,7 +192,8 @@ function stepper(name, label, value, min, max, step, unit) {
 
 function openSheet(programId) {
   const p = getProgram(programId);
-  const opts = p.kind === 'circuit' ? circuitOpts(p) : {};
+  const opts = defaultOpts(p);
+  const info = programInfo(p.id, opts);
 
   const summary = () => {
     const steps = buildSteps(p.id, opts);
@@ -172,6 +203,7 @@ function openSheet(programId) {
   let body = '';
   if (p.kind === 'bike') {
     body = `
+      <h4>Süre</h4>${durationChips()}
       <h4>Akış</h4><ul class="rows">${bikeRows(p)}</ul>
       <h4>Direnç rehberi</h4><ul class="rows legend">${levelLegend()}</ul>`;
   } else if (p.kind === 'circuit') {
@@ -184,8 +216,9 @@ function openSheet(programId) {
       <h4>Hareketler <small>(dokun: nasıl yapılır)</small></h4>
       ${p.exercises.map(exerciseDetails).join('')}`;
   } else {
-    body = `<h4>Bölümler</h4><ul class="rows">${p.parts.map((id) => {
-      const part = getProgram(id);
+    body = `<h4>Bisiklet süresi</h4>${durationChips()}
+      <h4>Bölümler</h4><ul class="rows">${p.parts.map((id) => {
+      const part = getProgram(id === 'bike' ? opts.bikeId : id);
       return `<li><span class="dot" style="background:var(--accent)"></span><span>${esc(part.name)} — ${esc(part.desc)}</span></li>`;
     }).join('')}</ul>`;
   }
@@ -194,7 +227,7 @@ function openSheet(programId) {
     <form method="dialog" class="sheet-inner">
       <div class="sheet-head">
         <div>
-          <h2>${esc(p.name)}</h2>
+          <h2>${esc(info.name)}</h2>
           <p class="meta" id="sheet-summary">${summary()}</p>
         </div>
         <button class="icon-btn" value="cancel" aria-label="Kapat">
@@ -202,7 +235,7 @@ function openSheet(programId) {
         </button>
       </div>
       <div class="timeline big" id="sheet-timeline">${timelineHTML(buildSteps(p.id, opts))}</div>
-      <p>${esc(p.desc)}</p>
+      <p>${esc(info.desc)}</p>
       ${body}
       <button type="button" class="btn primary full sticky" id="sheet-start">Başla</button>
     </form>`;
@@ -221,12 +254,18 @@ function openSheet(programId) {
     }));
   });
 
+  // Switching duration re-renders the sheet for the new selection.
+  $$('[data-bike]', sheet).forEach((c) => c.addEventListener('click', () => {
+    selectBike(c.dataset.bike);
+    openSheet(p.kind === 'bike' ? c.dataset.bike : p.id);
+  }));
+
   $('#sheet-start', sheet).addEventListener('click', () => {
     sheet.close();
     startRunner(p.id, opts);
   });
 
-  sheet.showModal();
+  if (!sheet.open) sheet.showModal();
 }
 
 // Close the sheet when tapping the backdrop.
@@ -428,18 +467,18 @@ function saveRun(completed) {
 
 function startRunner(programId, opts) {
   unlockAudio(); // must run inside the user's tap
-  const program = getProgram(programId);
+  const { name } = programInfo(programId, opts);
   const steps = buildSteps(programId, opts);
   run = {
     programId,
-    name: program.name,
+    name,
     steps,
     total: totalSeconds(steps),
     startedAt: new Date().toISOString(),
     saved: false,
   };
 
-  $('#runner-title').textContent = program.name;
+  $('#runner-title').textContent = name;
   $('#timeline').innerHTML = `${timelineHTML(steps)}<div class="playhead" id="playhead"></div>`;
   $('#finish').hidden = true;
   runner.hidden = false;

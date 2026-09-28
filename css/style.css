@@ -453,3 +453,7 @@ details.ex .variant { color: var(--muted); font-size: 14px; margin-top: 6px; }
 @media (min-height: 760px) {
   .step-hint { font-size: 16px; }
 }
+
+.chips.duration { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 0 0 12px; overflow: visible; }
+.chips.duration .chip { padding: 8px 0; text-align: center; }
+.sheet .chips.duration { margin: 0; }

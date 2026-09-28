@@ -228,30 +228,63 @@ export const EXERCISES = {
   },
 };
 
-// Bike: 40 minute flow as requested.
-// 5 easy, 5 moderate, 10 x (1 moderate + 1 hard), 5 moderate, 5 easy.
-function bike40Blocks() {
-  const blocks = [
-    { level: 'easy', dur: 300, label: 'Isınma' },
-    { level: 'moderate', dur: 300, label: 'Orta tempo' },
-  ];
-  for (let i = 1; i <= 10; i++) {
-    blocks.push({ level: 'moderate', dur: 60, label: `Aralık ${i}/10 · Orta` });
-    blocks.push({ level: 'hard', dur: 60, label: `Aralık ${i}/10 · Ağır` });
+// Bike flows. Each spec is a list of steady blocks ({ level, min, label })
+// and interval sets ({ intervals: n } = n x (1 min moderate + 1 min hard)).
+const warmUp = { level: 'easy', min: 5, label: 'Isınma' };
+const coolDown = { level: 'easy', min: 5, label: 'Soğuma' };
+const steady = (min) => ({ level: 'moderate', min, label: 'Orta tempo' });
+
+const BIKE_SPECS = {
+  30: [warmUp, steady(5), { intervals: 5 }, steady(5), coolDown],
+  40: [warmUp, steady(5), { intervals: 10 }, steady(5), coolDown],
+  45: [warmUp, steady(5), { intervals: 12 }, steady(6), coolDown],
+  50: [warmUp, steady(5), { intervals: 15 }, steady(5), coolDown],
+  // Two interval sets with an easy recovery block so the hour stays sustainable.
+  60: [
+    warmUp, steady(5), { intervals: 10 },
+    { level: 'easy', min: 4, label: 'Aktif dinlenme' },
+    { intervals: 8 }, steady(5), coolDown,
+  ],
+};
+
+export const BIKE_MINUTES = Object.keys(BIKE_SPECS).map(Number);
+
+function bikeBlocks(spec) {
+  const sets = spec.filter((s) => s.intervals).length;
+  let setNo = 0;
+  const blocks = [];
+  for (const s of spec) {
+    if (!s.intervals) {
+      blocks.push({ level: s.level, dur: s.min * 60, label: s.label });
+      continue;
+    }
+    setNo++;
+    const prefix = sets > 1 ? `Set ${setNo} · ` : '';
+    for (let i = 1; i <= s.intervals; i++) {
+      blocks.push({ level: 'moderate', dur: 60, label: `${prefix}Aralık ${i}/${s.intervals} · Orta` });
+      blocks.push({ level: 'hard', dur: 60, label: `${prefix}Aralık ${i}/${s.intervals} · Ağır` });
+    }
   }
-  blocks.push({ level: 'moderate', dur: 300, label: 'Orta tempo' });
-  blocks.push({ level: 'easy', dur: 300, label: 'Soğuma' });
   return blocks;
 }
 
+function bikeDesc(spec) {
+  return spec.map((s) => (s.intervals
+    ? `${s.intervals * 2} dk 1’er dk orta/ağır`
+    : `${s.min} dk ${LEVELS[s.level].label.toLocaleLowerCase('tr')}`)).join(' · ');
+}
+
+const BIKE_PROGRAMS = BIKE_MINUTES.map((min) => ({
+  id: `bike${min}`,
+  kind: 'bike',
+  minutes: min,
+  name: `${min} dk Bisiklet Akışı`,
+  desc: bikeDesc(BIKE_SPECS[min]),
+  blocks: bikeBlocks(BIKE_SPECS[min]),
+}));
+
 export const PROGRAMS = [
-  {
-    id: 'bike40',
-    kind: 'bike',
-    name: '40 dk Bisiklet Akışı',
-    desc: '5 dk boşta · 5 dk orta · 20 dk 1’er dk orta/ağır · 5 dk orta · 5 dk boşta',
-    blocks: bike40Blocks(),
-  },
+  ...BIKE_PROGRAMS,
   {
     id: 'db_burn',
     kind: 'circuit',
@@ -300,8 +333,9 @@ export const PROGRAMS = [
     id: 'combo',
     kind: 'combo',
     name: 'Bisiklet + Core',
-    desc: '40 dk bisiklet akışı, ardından 8 dk core bitirici.',
-    parts: ['bike40', 'core'],
+    desc: 'Seçtiğin bisiklet akışı, ardından 8 dk core bitirici.',
+    // 'bike' is resolved to the selected duration (opts.bikeId) at build time.
+    parts: ['bike', 'core'],
   },
 ];
 

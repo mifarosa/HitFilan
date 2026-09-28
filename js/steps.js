@@ -2,6 +2,7 @@
 import { EXERCISES, LEVELS, getProgram } from './data.js';
 
 const PREP_SECONDS = 10;
+export const DEFAULT_BIKE = 'bike40';
 
 function bikeSteps(program) {
   return program.blocks.map((b) => ({
@@ -72,12 +73,23 @@ export function buildSteps(programId, opts = {}) {
   // combo: concatenate parts with a transition step in between
   const steps = [];
   program.parts.forEach((partId, i) => {
-    const part = getProgram(partId);
+    const part = getProgram(partId === 'bike' ? (opts.bikeId || DEFAULT_BIKE) : partId);
     if (i === 0) steps.push(prepStep('Hazırlan', 'Müziğini aç, suyunu yanına al.'));
     else steps.push(prepStep('Geçiş', `Sıradaki: ${part.name}. Matını hazırla.`, 60));
     steps.push(...(part.kind === 'bike' ? bikeSteps(part) : circuitSteps(part, opts)));
   });
   return steps;
+}
+
+// Name and description as shown to the user; combos depend on the chosen bike flow.
+export function programInfo(programId, opts = {}) {
+  const program = getProgram(programId);
+  if (program.kind !== 'combo') return { name: program.name, desc: program.desc };
+  const bike = getProgram(opts.bikeId || DEFAULT_BIKE);
+  return {
+    name: `${bike.minutes} dk ${program.name}`,
+    desc: `${bike.minutes} dk bisiklet akışı, ardından 8 dk core bitirici.`,
+  };
 }
 
 export function totalSeconds(steps) {

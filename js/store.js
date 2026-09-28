@@ -7,6 +7,7 @@ const HISTORY_KEY = 'hitfilan.history';
 export const DEFAULT_SETTINGS = {
   weightKg: 75,
   dumbbellKg: 7.5,
+  bikeId: 'bike40', // selected bike flow duration
   beeps: true,
   voice: false,
   vibrate: true,
