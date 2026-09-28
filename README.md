@@ -17,4 +17,4 @@ Derleme adımı yok; herhangi bir statik sunucu yeterli:
 npx http-server -p 8080 .
 ```
 
-GitHub Pages ile de yayınlanabilir (tüm yollar göreli).
+Canlı adres: https://hitfilan.mifarosa.com (GitHub Pages, `main` dalı, kök klasör; alan adı `CNAME` dosyasında).
