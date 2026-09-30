@@ -32,9 +32,20 @@ function tone(freq, startOffset, duration, volume = 0.35) {
 }
 
 export const beeps = {
+  // Soft tick for the early part of the countdown
+  tick() {
+    ctx?.resume?.();
+    tone(660, 0, 0.07, 0.18);
+  },
+  // Stronger beep for the last 3 seconds
   count() {
     ctx?.resume?.();
-    tone(740, 0, 0.12);
+    tone(880, 0, 0.14, 0.45);
+  },
+  // Heads-up chime when the countdown starts (distinct from the other cues)
+  warn() {
+    ctx?.resume?.();
+    [988, 1319, 988].forEach((f, i) => tone(f, i * 0.12, 0.1, 0.4));
   },
   // Rising double beep: effort goes up
   up() {

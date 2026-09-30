@@ -8,6 +8,10 @@ export const DEFAULT_SETTINGS = {
   weightKg: 75,
   dumbbellKg: 7.5,
   bikeId: 'bike40', // selected bike flow duration
+  warnSeconds: 10, // heads-up before each change
+  resEasy: 2, // resistance knob levels on the user's bike
+  resModerate: 5,
+  resHard: 8,
   beeps: true,
   voice: false,
   vibrate: true,
@@ -46,6 +50,27 @@ export function addHistory(entry) {
   const list = loadHistory();
   list.unshift(entry);
   write(HISTORY_KEY, list.slice(0, 500));
+}
+
+export function updateHistory(id, patch) {
+  write(HISTORY_KEY, loadHistory().map((e) => (e.id === id ? { ...e, ...patch } : e)));
+}
+
+// In-progress workout, so an interrupted session (call, reload, closed tab) can resume.
+const ACTIVE_KEY = 'hitfilan.active';
+
+export function saveActive(state) {
+  write(ACTIVE_KEY, state);
+}
+
+export function loadActive() {
+  return read(ACTIVE_KEY, null);
+}
+
+export function clearActive() {
+  try {
+    localStorage.removeItem(ACTIVE_KEY);
+  } catch { /* storage unavailable */ }
 }
 
 export function removeHistory(id) {

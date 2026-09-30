@@ -22,6 +22,7 @@
 
   <main>
     <section id="view-home" class="view active" aria-label="Antrenmanlar">
+      <div id="resume-card" class="card resume" hidden></div>
       <div id="week-summary" class="card week"></div>
 
       <h2 class="section-title">Kondisyon Bisikleti</h2>
@@ -65,8 +66,24 @@
           <span>Dumbbell ağırlığı (kg)</span>
           <input type="number" name="dumbbellKg" min="0" max="50" step="0.5" inputmode="decimal">
         </label>
+        <label class="row">
+          <span>Geri sayım uyarısı<small>Her geçişten kaç saniye önce haber versin</small></span>
+          <select name="warnSeconds">
+            <option value="5">5 sn</option>
+            <option value="10">10 sn</option>
+            <option value="15">15 sn</option>
+          </select>
+        </label>
+        <div class="row res-row">
+          <span>Bisiklet direnç seviyeleri<small>Kendi bisikletindeki kademe numaraları</small></span>
+          <div class="res-inputs">
+            <label><small>Boşta</small><input type="number" name="resEasy" min="1" max="32" inputmode="numeric"></label>
+            <label><small>Orta</small><input type="number" name="resModerate" min="1" max="32" inputmode="numeric"></label>
+            <label><small>Ağır</small><input type="number" name="resHard" min="1" max="32" inputmode="numeric"></label>
+          </div>
+        </div>
         <label class="row switch">
-          <span>Bip sesleri<small>Geçişlerden önce 3-2-1 ve geçiş sinyali</small></span>
+          <span>Bip sesleri<small>Geri sayım, geçiş ve taraf değiştir sinyalleri</small></span>
           <input type="checkbox" name="beeps">
         </label>
         <label class="row switch">
@@ -135,6 +152,7 @@
         </svg>
         <div class="ring-time" id="step-time">0:00</div>
       </div>
+      <div class="targets" id="targets" hidden></div>
       <p class="step-hint" id="step-hint"></p>
     </div>
 
@@ -166,6 +184,16 @@
         </div>
         <h2>Tebrikler!</h2>
         <p id="finish-text"></p>
+        <div class="rate">
+          <p class="rate-q">Nasıl geçti?</p>
+          <div class="rate-opts" id="rate-opts">
+            <button type="button" data-rpe="1">Çok kolay</button>
+            <button type="button" data-rpe="2">Rahat</button>
+            <button type="button" data-rpe="3">Zorladı</button>
+            <button type="button" data-rpe="4">Çok zor</button>
+          </div>
+          <p class="rate-tip" id="rate-tip"></p>
+        </div>
         <button class="btn primary full" id="finish-close">Kapat</button>
       </div>
     </div>

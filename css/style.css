@@ -20,6 +20,8 @@
 
 * { box-sizing: border-box; }
 
+[hidden] { display: none !important; }
+
 html, body { margin: 0; }
 
 body {
@@ -457,3 +459,80 @@ details.ex .variant { color: var(--muted); font-size: 14px; margin-top: 6px; }
 .chips.duration { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 0 0 12px; overflow: visible; }
 .chips.duration .chip { padding: 8px 0; text-align: center; }
 .sheet .chips.duration { margin: 0; }
+
+/* ---------- Countdown warning ---------- */
+
+/* During the last N seconds the screen takes the colour of the next step. */
+.runner.warning[data-level] { --lvl: var(--warn); }
+.runner.warning .step-tag { font-size: 18px; }
+.runner.warning .step-label { color: var(--warn); }
+.runner.warning .step-hint { color: var(--text); font-weight: 600; font-size: 17px; }
+.runner.warning::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 6px var(--warn), inset 0 0 70px color-mix(in srgb, var(--warn) 70%, transparent);
+  animation: edge-pulse 1s ease-in-out infinite;
+}
+@keyframes edge-pulse { 50% { opacity: .25; } }
+.runner.warning .ring-time { color: var(--warn); }
+.ring-time.pop { animation: pop .45s ease-out; }
+@keyframes pop { 0% { transform: scale(1.18); } 100% { transform: scale(1); } }
+.runner.warning.paused::after { animation: none; opacity: .5; }
+
+/* ---------- Bike targets ---------- */
+
+.targets { display: flex; gap: 10px; margin-top: 14px; }
+.targets[hidden] { display: none; }
+.targets span {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--lvl) 60%, var(--line));
+}
+.targets small { color: var(--muted); font-size: 12px; }
+.targets b { font-size: 22px; font-variant-numeric: tabular-nums; }
+
+/* ---------- Rating ---------- */
+
+.rate { margin: -8px 0 16px; }
+.rate-q { margin: 0 0 8px; font-weight: 600; color: var(--text); }
+.rate-opts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.rate-opts button {
+  padding: 10px 6px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  font-size: 15px;
+}
+.rate-opts button.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+.rate-tip { min-height: 1.4em; margin: 10px 0 0; font-size: 14px; }
+.badge.rpe-1, .badge.rpe-2 { background: color-mix(in srgb, var(--lvl-easy) 20%, transparent); color: var(--lvl-easy); }
+.badge.rpe-3 { background: color-mix(in srgb, var(--lvl-moderate) 20%, transparent); color: var(--lvl-moderate); }
+.badge.rpe-4 { background: color-mix(in srgb, var(--lvl-hard) 20%, transparent); color: var(--lvl-hard); }
+
+/* ---------- Resume card ---------- */
+
+.resume { border-color: var(--accent); }
+.resume h3 { margin: 0 0 2px; font-size: 16px; }
+.resume-actions { display: flex; gap: 8px; margin-top: 12px; }
+.resume-actions .btn { flex: 1; padding: 10px; font-size: 15px; }
+
+/* ---------- Settings extras ---------- */
+
+.settings select {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+}
+.settings .res-row { flex-wrap: wrap; }
+.res-inputs { display: flex; gap: 8px; }
+.res-inputs label { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.settings .res-inputs input[type="number"] { width: 60px; text-align: center; }
