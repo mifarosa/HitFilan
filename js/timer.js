@@ -66,6 +66,13 @@ export class SequenceTimer {
     this.h.onTick?.(this);
   }
 
+  // Jump to a saved position (used to resume an interrupted workout).
+  seek(index, elapsedMs) {
+    this.index = Math.min(Math.max(index, 0), this.steps.length - 1);
+    this.stepElapsedMs = Math.min(elapsedMs, this.current.dur * 1000 - 1000);
+    this.lastCueSecond = null;
+  }
+
   next() {
     if (this.index >= this.steps.length - 1) this.finish();
     else this.goTo(this.index + 1);
@@ -103,6 +110,7 @@ export class SequenceTimer {
   }
 
   finish() {
+    this.stepElapsedMs = this.current.dur * 1000; // totals read as fully done
     this.running = false;
     this.finished = true;
     clearInterval(this.interval);

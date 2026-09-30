@@ -22,6 +22,7 @@
 
   <main>
     <section id="view-home" class="view active" aria-label="Antrenmanlar">
+      <div id="resume-card" class="card resume" hidden></div>
       <div id="week-summary" class="card week"></div>
 
       <h2 class="section-title">Kondisyon Bisikleti</h2>
@@ -50,8 +51,32 @@
       <div id="exercise-list" class="exercise-list"></div>
     </section>
 
-    <section id="view-history" class="view" aria-label="Geçmiş">
-      <div id="history-summary" class="card week"></div>
+    <section id="view-history" class="view" aria-label="Takvim">
+      <div id="streak-card" class="card streak"></div>
+
+      <div class="card calendar">
+        <div class="cal-head">
+          <button type="button" class="icon-btn" id="cal-prev" aria-label="Önceki ay">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+          </button>
+          <h3 id="cal-title"></h3>
+          <button type="button" class="icon-btn" id="cal-next" aria-label="Sonraki ay">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <div class="cal-legend">
+          <span><i class="dot-bike"></i>Bisiklet</span>
+          <span><i class="dot-strength"></i>Kuvvet</span>
+          <span><i class="wk-met"></i>Hedef tamam</span>
+        </div>
+        <p class="cal-summary" id="cal-summary"></p>
+      </div>
+
+      <div class="list-head">
+        <h2 class="section-title" id="list-title"></h2>
+        <button type="button" class="chip" id="list-clear" hidden>Tüm ay</button>
+      </div>
       <div id="history-list"></div>
     </section>
 
@@ -65,8 +90,32 @@
           <span>Dumbbell ağırlığı (kg)</span>
           <input type="number" name="dumbbellKg" min="0" max="50" step="0.5" inputmode="decimal">
         </label>
+        <label class="row">
+          <span>Haftalık hedef<small>Seri için haftada kaç antrenman</small></span>
+          <select name="weeklyGoal">
+            <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+            <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+            <option value="7">7</option>
+          </select>
+        </label>
+        <label class="row">
+          <span>Geri sayım uyarısı<small>Her geçişten kaç saniye önce haber versin</small></span>
+          <select name="warnSeconds">
+            <option value="5">5 sn</option>
+            <option value="10">10 sn</option>
+            <option value="15">15 sn</option>
+          </select>
+        </label>
+        <div class="row res-row">
+          <span>Bisiklet direnç seviyeleri<small>Kendi bisikletindeki kademe numaraları</small></span>
+          <div class="res-inputs">
+            <label><small>Boşta</small><input type="number" name="resEasy" min="1" max="32" inputmode="numeric"></label>
+            <label><small>Orta</small><input type="number" name="resModerate" min="1" max="32" inputmode="numeric"></label>
+            <label><small>Ağır</small><input type="number" name="resHard" min="1" max="32" inputmode="numeric"></label>
+          </div>
+        </div>
         <label class="row switch">
-          <span>Bip sesleri<small>Geçişlerden önce 3-2-1 ve geçiş sinyali</small></span>
+          <span>Bip sesleri<small>Geri sayım, geçiş ve taraf değiştir sinyalleri</small></span>
           <input type="checkbox" name="beeps">
         </label>
         <label class="row switch">
@@ -101,8 +150,8 @@
       <span>Hareketler</span>
     </button>
     <button class="tab" data-view="history">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
-      <span>Geçmiş</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+      <span>Takvim</span>
     </button>
     <button class="tab" data-view="settings">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>
@@ -135,6 +184,7 @@
         </svg>
         <div class="ring-time" id="step-time">0:00</div>
       </div>
+      <div class="targets" id="targets" hidden></div>
       <p class="step-hint" id="step-hint"></p>
     </div>
 
@@ -166,6 +216,16 @@
         </div>
         <h2>Tebrikler!</h2>
         <p id="finish-text"></p>
+        <div class="rate">
+          <p class="rate-q">Nasıl geçti?</p>
+          <div class="rate-opts" id="rate-opts">
+            <button type="button" data-rpe="1">Çok kolay</button>
+            <button type="button" data-rpe="2">Rahat</button>
+            <button type="button" data-rpe="3">Zorladı</button>
+            <button type="button" data-rpe="4">Çok zor</button>
+          </div>
+          <p class="rate-tip" id="rate-tip"></p>
+        </div>
         <button class="btn primary full" id="finish-close">Kapat</button>
       </div>
     </div>
