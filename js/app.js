@@ -133,7 +133,7 @@ function renderWeek(el) {
   const active = new Set(entries.map((e) => (new Date(e.date).getDay() + 6) % 7));
   el.innerHTML = `
     <div class="week-stats">
-      <div><b>${entries.length}</b><small>antrenman</small></div>
+      <div><b>${entries.length}/${settings.weeklyGoal}</b><small>haftalık hedef</small></div>
       <div><b>${mins}</b><small>dakika</small></div>
       <div><b>${kcal}</b><small>~kcal</small></div>
     </div>
@@ -315,16 +315,157 @@ const dateFmt = new Intl.DateTimeFormat('tr-TR', {
   weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
 });
 
-function renderHistory() {
-  renderWeek($('#history-summary'));
-  const list = loadHistory();
-  const el = $('#history-list');
-  if (!list.length) {
-    el.innerHTML = '<p class="empty">Henüz kayıt yok. İlk antrenmanını bitirince burada görünecek.</p>';
-    return;
+/* ---------- Calendar & streak ---------- */
+
+const DAY_NAMES = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+const monthFmt = new Intl.DateTimeFormat('tr-TR', { month: 'long', year: 'numeric' });
+const dayFmt = new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' });
+
+let calMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+let selectedDay = null; // 'YYYY-MM-DD' or null for the whole month
+
+function dayKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function addDays(d, n) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+}
+
+// Bike (and bike + core) vs strength circuits, for the dot colours.
+function entryKind(e) {
+  return getProgram(e.programId)?.kind === 'circuit' ? 'strength' : 'bike';
+}
+
+function groupByDay(list) {
+  const map = new Map();
+  for (const e of list) {
+    const k = dayKey(new Date(e.date));
+    if (!map.has(k)) map.set(k, []);
+    map.get(k).push(e);
   }
-  el.innerHTML = list.map((e) => `
-    <div class="card history-item">
+  return map;
+}
+
+function weekCounts(list) {
+  const map = new Map();
+  for (const e of list) {
+    const k = dayKey(startOfWeek(new Date(e.date)));
+    map.set(k, (map.get(k) || 0) + 1);
+  }
+  return map;
+}
+
+// A week counts toward the streak when it reaches the weekly goal. The
+// current week only adds to the streak once reached; it never breaks it.
+function streakInfo(list) {
+  const goal = settings.weeklyGoal;
+  const counts = weekCounts(list);
+  const thisWeek = startOfWeek();
+  const count = (d) => counts.get(dayKey(d)) || 0;
+
+  let current = 0;
+  let w = thisWeek;
+  if (count(w) >= goal) current++;
+  w = addDays(w, -7);
+  while (count(w) >= goal) {
+    current++;
+    w = addDays(w, -7);
+  }
+
+  let best = 0;
+  if (list.length) {
+    const first = startOfWeek(new Date(Math.min(...list.map((e) => new Date(e.date)))));
+    let run = 0;
+    for (let d = first; d <= thisWeek; d = addDays(d, 7)) {
+      run = count(d) >= goal ? run + 1 : 0;
+      best = Math.max(best, run);
+    }
+  }
+  return { goal, current, best, thisWeek: count(thisWeek) };
+}
+
+function renderStreak(list) {
+  const s = streakInfo(list);
+  const left = Math.max(0, s.goal - s.thisWeek);
+  const pct = Math.min(100, (s.thisWeek / s.goal) * 100);
+  let note;
+  if (left === 0) note = 'Bu haftanın hedefi tamam. Harika!';
+  else if (s.current > 0) note = `Seriyi sürdürmek için bu hafta ${left} antrenman daha.`;
+  else note = `Seriyi başlatmak için bu hafta ${left} antrenman daha.`;
+  $('#streak-card').innerHTML = `
+    <div class="streak-stats">
+      <div class="streak-main"><b>${s.current}</b><small>haftalık seri</small></div>
+      <div><b>${s.thisWeek}/${s.goal}</b><small>bu hafta</small></div>
+      <div><b>${s.best}</b><small>en iyi seri</small></div>
+    </div>
+    <div class="goal-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${s.goal}" aria-valuenow="${s.thisWeek}">
+      <i style="width:${pct}%"></i>
+    </div>
+    <p class="streak-note">${note}</p>`;
+}
+
+function renderCalendar(list) {
+  const byDay = groupByDay(list);
+  const counts = weekCounts(list);
+  const goal = settings.weeklyGoal;
+  const y = calMonth.getFullYear();
+  const m = calMonth.getMonth();
+  const todayKey = dayKey(new Date());
+  const lastDay = new Date(y, m + 1, 0);
+
+  $('#cal-title').textContent = monthFmt.format(calMonth);
+  // Don't page past the current month.
+  $('#cal-next').disabled = y === new Date().getFullYear() && m === new Date().getMonth();
+
+  let html = DAY_NAMES.map((d) => `<span class="cal-dow">${d}</span>`).join('')
+    + '<span class="cal-dow cal-wk-head">Hafta</span>';
+  for (let w = startOfWeek(calMonth); w <= lastDay; w = addDays(w, 7)) {
+    for (let i = 0; i < 7; i++) {
+      const d = addDays(w, i);
+      const k = dayKey(d);
+      const items = byDay.get(k) || [];
+      const cls = [
+        'cal-day',
+        d.getMonth() !== m ? 'out' : '',
+        items.length ? 'has' : '',
+        k === todayKey ? 'today' : '',
+        k === selectedDay ? 'selected' : '',
+      ].join(' ');
+      const dots = items.slice(0, 3).map((e) => `<i class="dot-${entryKind(e)}"></i>`).join('');
+      const label = `${dayFmt.format(d)}${items.length ? `, ${items.length} antrenman` : ''}`;
+      html += `<button type="button" class="${cls}" data-day="${k}" aria-label="${label}">
+        <span>${d.getDate()}</span><span class="dots">${dots}</span></button>`;
+    }
+    const n = counts.get(dayKey(w)) || 0;
+    const future = w > new Date();
+    html += `<span class="cal-wk ${n >= goal ? 'met' : ''} ${future ? 'future' : ''}">${future ? '' : `${n}/${goal}`}</span>`;
+  }
+  $('#cal-grid').innerHTML = html;
+
+  const monthEntries = list.filter((e) => {
+    const d = new Date(e.date);
+    return d.getFullYear() === y && d.getMonth() === m;
+  });
+  const mins = Math.round(monthEntries.reduce((a, e) => a + e.durationSec, 0) / 60);
+  const kcal = monthEntries.reduce((a, e) => a + (e.kcal || 0), 0);
+  const days = new Set(monthEntries.map((e) => dayKey(new Date(e.date)))).size;
+  $('#cal-summary').innerHTML = monthEntries.length
+    ? `<b>${monthEntries.length}</b> antrenman · <b>${days}</b> gün · <b>${Math.floor(mins / 60)} sa ${mins % 60} dk</b> · ~${kcal} kcal`
+    : 'Bu ay henüz antrenman yok.';
+
+  $$('#cal-grid [data-day]').forEach((b) => b.addEventListener('click', () => {
+    selectedDay = selectedDay === b.dataset.day ? null : b.dataset.day;
+    const d = new Date(`${b.dataset.day}T12:00:00`);
+    if (d.getMonth() !== m) calMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+    renderHistory();
+  }));
+  return monthEntries;
+}
+
+function historyItemHTML(e) {
+  return `
+    <div class="card history-item kind-${entryKind(e)}">
       <div>
         <h3>${esc(e.name)}</h3>
         <p class="meta">${dateFmt.format(new Date(e.date))}</p>
@@ -337,7 +478,30 @@ function renderHistory() {
       <button class="icon-btn small" data-remove="${e.id}" aria-label="Kaydı sil">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
-    </div>`).join('');
+    </div>`;
+}
+
+function renderHistory() {
+  const list = loadHistory();
+  renderStreak(list);
+  const monthEntries = renderCalendar(list);
+
+  const shown = selectedDay
+    ? list.filter((e) => dayKey(new Date(e.date)) === selectedDay)
+    : monthEntries;
+  $('#list-title').textContent = selectedDay
+    ? dayFmt.format(new Date(`${selectedDay}T12:00:00`))
+    : `${monthFmt.format(calMonth)} antrenmanları`;
+  $('#list-clear').hidden = !selectedDay;
+
+  const el = $('#history-list');
+  if (!shown.length) {
+    el.innerHTML = list.length
+      ? '<p class="empty">Bu tarihte antrenman yok.</p>'
+      : '<p class="empty">Henüz kayıt yok. İlk antrenmanını bitirince takvimde görünecek.</p>';
+    return;
+  }
+  el.innerHTML = shown.map(historyItemHTML).join('');
   $$('[data-remove]', el).forEach((b) => b.addEventListener('click', () => {
     if (confirm('Bu kayıt silinsin mi?')) {
       removeHistory(b.dataset.remove);
@@ -345,6 +509,21 @@ function renderHistory() {
     }
   }));
 }
+
+$('#cal-prev').addEventListener('click', () => {
+  calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1);
+  selectedDay = null;
+  renderHistory();
+});
+$('#cal-next').addEventListener('click', () => {
+  calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1);
+  selectedDay = null;
+  renderHistory();
+});
+$('#list-clear').addEventListener('click', () => {
+  selectedDay = null;
+  renderHistory();
+});
 
 /* ---------- Settings ---------- */
 

@@ -9,6 +9,7 @@ export const DEFAULT_SETTINGS = {
   dumbbellKg: 7.5,
   bikeId: 'bike40', // selected bike flow duration
   warnSeconds: 10, // heads-up before each change
+  weeklyGoal: 3, // workouts per week that keep the streak going
   resEasy: 2, // resistance knob levels on the user's bike
   resModerate: 5,
   resHard: 8,
