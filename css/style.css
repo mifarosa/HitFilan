@@ -609,3 +609,95 @@ details.ex .variant { color: var(--muted); font-size: 14px; margin-top: 6px; }
 .list-head .chip { padding: 6px 12px; font-size: 13px; }
 .history-item { border-left: 4px solid var(--kind-bike); }
 .history-item.kind-strength { border-left-color: var(--kind-strength); }
+
+/* ---------- Goals ---------- */
+
+.goal { padding: 16px; }
+.goal-head { display: flex; justify-content: space-between; align-items: flex-start; }
+.goal-head h3 { margin: 0; font-size: 18px; }
+.goal-big { margin-top: 10px; display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px; }
+.goal-big b { font-size: 44px; line-height: 1.05; color: var(--accent); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.goal-big span { color: var(--muted); font-size: 16px; }
+.goal .goal-bar { margin: 10px 0 6px; height: 10px; }
+.goal-bar.thin { height: 6px; margin: 6px 0 0; }
+.goal-pace { margin: 0; font-size: 14px; color: var(--muted); }
+
+.goal-today {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+.goal-today.done { outline: 2px solid var(--lvl-easy); }
+.goal-today.done .goal-bar i { background: var(--lvl-easy); }
+.goal-today-text small { display: block; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+.goal-today-text > b { font-size: 26px; font-variant-numeric: tabular-nums; }
+.goal-today-text > b span { font-size: 16px; color: var(--muted); font-weight: 600; }
+.goal-today-text > small + b + small { text-transform: none; letter-spacing: 0; }
+.goal-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.goal-actions button {
+  flex: 1 1 auto;
+  min-width: 56px;
+  padding: 10px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-weight: 700;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+.goal-actions .g-add { font-size: 17px; }
+.goal-actions .g-fill { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.goal-actions .g-edit { color: var(--muted); font-weight: 500; }
+.goal-actions .g-watch { flex-basis: 100%; }
+.goal-actions .g-watch.running { background: var(--lvl-hard); border-color: var(--lvl-hard); color: #fff; }
+
+.g-strip { display: grid; grid-template-columns: repeat(15, 1fr); gap: 3px; margin-top: 14px; }
+.g-day {
+  aspect-ratio: 1;
+  border: 0;
+  padding: 0;
+  border-radius: 4px;
+  background: var(--surface-2);
+}
+.g-day.future { opacity: .45; cursor: default; }
+.g-day.full, .g-legend .full { background: var(--lvl-easy); }
+.g-day.part, .g-legend .part { background: var(--lvl-moderate); }
+.g-day.miss, .g-legend .miss { background: color-mix(in srgb, var(--lvl-hard) 55%, var(--surface-2)); }
+.g-day.rest, .g-legend .rest {
+  background: repeating-linear-gradient(45deg, var(--surface-2) 0 2px, color-mix(in srgb, var(--muted) 55%, transparent) 2px 4px);
+}
+.g-day.today { outline: 2px solid var(--text); outline-offset: 1px; }
+.g-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 8px 0 0; font-size: 11px; color: var(--muted); }
+.g-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-left: 4px; }
+.g-legend i:first-child { margin-left: 0; }
+
+.preset h3 { margin: 0; font-size: 17px; }
+.preset p { margin: 4px 0 8px; color: var(--muted); font-size: 14px; }
+
+.custom-goal .custom-lead { margin: 0 0 8px; color: var(--muted); font-size: 14px; }
+.custom-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.custom-row input, .custom-row select {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+}
+.custom-row input { width: 110px; font-size: 20px; font-weight: 700; }
+.custom-row select { flex: 1; min-width: 140px; }
+#custom-unit { display: none; }
+.custom-goal .meta { min-height: 1.4em; margin-bottom: 12px; }
+
+.goal-done { display: flex; align-items: center; gap: 10px; }
+.goal-done > div { flex: 1; min-width: 0; }
+.goal-done h3 { margin: 0 0 2px; font-size: 16px; }
+.goal-done.ok { border-color: color-mix(in srgb, var(--lvl-easy) 60%, var(--line)); }
+
+.today-goals ul { list-style: none; margin: 8px 0 0; padding: 0; }
+.today-goals li { display: flex; justify-content: space-between; padding: 6px 0; border-top: 1px solid var(--line); font-size: 15px; }
+.today-goals li span { text-transform: capitalize; }
+.today-goals li b { font-variant-numeric: tabular-nums; }
+.today-goals li.ok b { color: var(--lvl-easy); }
+.today-goals h3 { margin: 0; font-size: 16px; }

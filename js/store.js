@@ -74,6 +74,17 @@ export function clearActive() {
   } catch { /* storage unavailable */ }
 }
 
+const GOALS_KEY = 'hitfilan.goals';
+
+export function loadGoals() {
+  const list = read(GOALS_KEY, []);
+  return Array.isArray(list) ? list : [];
+}
+
+export function saveGoals(goals) {
+  write(GOALS_KEY, goals);
+}
+
 export function removeHistory(id) {
   write(HISTORY_KEY, loadHistory().filter((e) => e.id !== id));
 }
