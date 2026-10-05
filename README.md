@@ -7,7 +7,8 @@ Home Gym PWA App — ev için kondisyon bisikleti zamanlayıcısı ve kuvvet dev
 - **Bisiklet + Core** kombinasyonu
 - Müziğin üzerine çalan bip sesleri (3-2-1, geçiş, taraf değiştir), isteğe bağlı Türkçe sesli anons, titreşim
 - Ekranı açık tutma (Wake Lock), ekran arka plana geçse bile doğru kalan zamanlayıcı
-- Haftalık özet, antrenman geçmişi ve tahmini kalori
+- Takvim: haftalık hedef ve seri, ay görünümü, tahmini kalori
+- Hedefler: 30 günlük squat / şınav / mekik / plank meydan okumaları ve "1 ayda 1000 mekik" gibi kendi toplam hedefin
 - Çevrimdışı çalışır, ana ekrana eklenebilir
 
 ## Çalıştırma

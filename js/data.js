@@ -128,6 +128,14 @@ export const EXERCISES = {
     easier: 'Sadece bacakları hareket ettir.',
     harder: 'Dumbbell’ı iki elle tut.',
   },
+  crunch: {
+    name: 'Mekik (Crunch)',
+    equip: 'bodyweight',
+    target: 'Karın',
+    how: 'Sırtüstü, dizler bükülü, eller şakakta. Belini yere bastırarak omuzları yerden kaldır, 1 sn sık, kontrollü in. Boynundan çekme.',
+    easier: 'Kolları göğüste çaprazla, hareketi kısalt.',
+    harder: 'Dumbbell’ı göğsünde tut.',
+  },
   bicycle_crunch: {
     name: 'Bisiklet Mekik',
     equip: 'bodyweight',

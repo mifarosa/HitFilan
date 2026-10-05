@@ -23,6 +23,7 @@
   <main>
     <section id="view-home" class="view active" aria-label="Antrenmanlar">
       <div id="resume-card" class="card resume" hidden></div>
+      <div id="home-goals"></div>
       <div id="week-summary" class="card week"></div>
 
       <h2 class="section-title">Kondisyon Bisikleti</h2>
@@ -78,6 +79,30 @@
         <button type="button" class="chip" id="list-clear" hidden>Tüm ay</button>
       </div>
       <div id="history-list"></div>
+    </section>
+
+    <section id="view-goals" class="view" aria-label="Hedefler">
+      <div id="goals-active"></div>
+
+      <h2 class="section-title">30 günlük meydan okumalar</h2>
+      <div id="goals-presets" class="program-list"></div>
+
+      <h2 class="section-title">Kendi hedefin</h2>
+      <form id="custom-goal" class="card custom-goal">
+        <p class="custom-lead">1 ayda (30 gün) toplam</p>
+        <div class="custom-row">
+          <input type="number" name="total" min="1" max="100000" inputmode="numeric" aria-label="Toplam">
+          <span id="custom-unit"></span>
+          <select name="exercise" aria-label="Hareket"></select>
+        </div>
+        <p class="meta" id="custom-hint"></p>
+        <button type="submit" class="btn primary full">Hedefi başlat</button>
+      </form>
+
+      <div id="goals-done-wrap" hidden>
+        <h2 class="section-title">Biten hedefler</h2>
+        <div id="goals-done"></div>
+      </div>
     </section>
 
     <section id="view-settings" class="view" aria-label="Ayarlar">
@@ -152,6 +177,10 @@
     <button class="tab" data-view="history">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
       <span>Takvim</span>
+    </button>
+    <button class="tab" data-view="goals">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/></svg>
+      <span>Hedefler</span>
     </button>
     <button class="tab" data-view="settings">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>

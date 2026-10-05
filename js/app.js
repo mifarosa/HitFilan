@@ -3,6 +3,7 @@ import {
   buildSteps, totalSeconds, estimateKcal, formatTime, programInfo,
 } from './steps.js';
 import { SequenceTimer } from './timer.js';
+import { renderGoals, initGoals, todayGoalsHTML } from './goals.js';
 import { unlockAudio, beeps, speak, vibrate } from './audio.js';
 import {
   loadSettings, saveSettings, loadHistory, addHistory, updateHistory, removeHistory, clearHistory,
@@ -37,11 +38,21 @@ function showView(name) {
   $$('.view').forEach((v) => v.classList.toggle('active', v.id === `view-${name}`));
   $$('.tab').forEach((t) => t.classList.toggle('active', t.dataset.view === name));
   if (name === 'history') renderHistory();
-  if (name === 'home') renderWeek($('#week-summary'));
+  if (name === 'goals') renderGoals();
+  if (name === 'home') {
+    renderWeek($('#week-summary'));
+    renderHomeGoals();
+  }
   window.scrollTo(0, 0);
 }
 
 $$('.tab').forEach((t) => t.addEventListener('click', () => showView(t.dataset.view)));
+
+function renderHomeGoals() {
+  const el = $('#home-goals');
+  el.innerHTML = todayGoalsHTML();
+  el.querySelector('[data-goto]')?.addEventListener('click', () => showView('goals'));
+}
 
 /* ---------- Helpers ---------- */
 
@@ -957,6 +968,8 @@ fillSettings();
 renderHome();
 renderExercises();
 renderResume();
+initGoals();
+renderHomeGoals();
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   navigator.serviceWorker.register('sw.js').catch(() => {});
