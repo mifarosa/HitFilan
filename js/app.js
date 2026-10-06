@@ -4,9 +4,12 @@ import {
 } from './steps.js';
 import { SequenceTimer } from './timer.js';
 import { renderGoals, initGoals, todayGoalsHTML } from './goals.js';
+import {
+  initPlans, openEditor, deletePlan, duplicatePlan, planFromProgram, planRowsHTML,
+} from './plans.js';
 import { unlockAudio, beeps, speak, vibrate } from './audio.js';
 import {
-  loadSettings, saveSettings, loadHistory, addHistory, updateHistory, removeHistory, clearHistory,
+  loadSettings, loadPlans, saveSettings, loadHistory, addHistory, updateHistory, removeHistory, clearHistory,
   saveActive, loadActive, clearActive,
 } from './store.js';
 
@@ -107,6 +110,7 @@ function programCard(p) {
     const usesDb = p.exercises.some((id) => EXERCISES[id].equip === 'dumbbell');
     meta += ` · ${p.exercises.length} hareket · ${usesDb ? 'Dumbbell' : 'Ekipmansız'}`;
   }
+  if (p.kind === 'custom') meta += ` · ${steps.length - 1} adım`;
   return `
     <button class="card program" data-program="${p.id}">
       <div class="program-head">
@@ -119,7 +123,18 @@ function programCard(p) {
     </button>`;
 }
 
+function renderPlans() {
+  const plans = loadPlans().map((pl) => getProgram(pl.id));
+  $('#plan-list').innerHTML = plans.map(programCard).join('') + `
+    <button type="button" class="card new-plan" id="new-plan">
+      <span class="new-plan-plus" aria-hidden="true">+</span>
+      <span><b>Yeni plan oluştur</b><small>${plans.length ? 'Bisiklet, hareket ya da kendi adımların' : 'Kendi bisiklet akışını ya da hareket devreni kur'}</small></span>
+    </button>`;
+  $('#new-plan').addEventListener('click', () => openEditor());
+}
+
 function renderHome() {
+  renderPlans();
   $('#bike-list').innerHTML = durationChips()
     + [selectedBike(), getProgram('combo')].map(programCard).join('');
   $$('#bike-list [data-bike]').forEach((c) => c.addEventListener('click', () => selectBike(c.dataset.bike)));
@@ -226,7 +241,15 @@ function openSheet(programId) {
   };
 
   let body = '';
-  if (p.kind === 'bike') {
+  if (p.kind === 'custom') {
+    body = `
+      <h4>Bölümler</h4><ul class="plan-rows">${planRowsHTML(p)}</ul>
+      <div class="sheet-actions">
+        <button type="button" class="btn ghost" data-plan-act="edit">Düzenle</button>
+        <button type="button" class="btn ghost" data-plan-act="copy">Kopyala</button>
+        <button type="button" class="btn ghost danger" data-plan-act="delete">Sil</button>
+      </div>`;
+  } else if (p.kind === 'bike') {
     body = `
       <h4>Süre</h4>${durationChips()}
       <h4>Akış</h4><ul class="rows">${bikeRows(p)}</ul>
@@ -262,6 +285,7 @@ function openSheet(programId) {
       <div class="timeline big" id="sheet-timeline">${timelineHTML(buildSteps(p.id, opts))}</div>
       <p>${esc(info.desc)}</p>
       ${body}
+      ${p.kind !== 'custom' ? '<button type="button" class="btn ghost full" id="sheet-copy">Kopyala ve kendi planım yap</button>' : ''}
       <button type="button" class="btn primary full sticky" id="sheet-start">Başla</button>
     </form>`;
 
@@ -283,6 +307,30 @@ function openSheet(programId) {
   $$('[data-bike]', sheet).forEach((c) => c.addEventListener('click', () => {
     selectBike(c.dataset.bike);
     openSheet(p.kind === 'bike' ? c.dataset.bike : p.id);
+  }));
+
+  // Built-in programs can be copied into an editable plan.
+  $('#sheet-copy', sheet)?.addEventListener('click', () => {
+    sheet.close();
+    openEditor(planFromProgram(p, opts));
+  });
+
+  $$('[data-plan-act]', sheet).forEach((b) => b.addEventListener('click', () => {
+    const act = b.dataset.planAct;
+    if (act === 'edit') {
+      sheet.close();
+      openEditor(loadPlans().find((pl) => pl.id === p.id));
+    }
+    if (act === 'copy') {
+      const copy = duplicatePlan(p.id);
+      renderHome();
+      if (copy) openSheet(copy.id);
+    }
+    if (act === 'delete' && confirm(`“${p.name}” silinsin mi?`)) {
+      deletePlan(p.id);
+      sheet.close();
+      renderHome();
+    }
   }));
 
   $('#sheet-start', sheet).addEventListener('click', () => {
@@ -345,7 +393,10 @@ function addDays(d, n) {
 
 // Bike (and bike + core) vs strength circuits, for the dot colours.
 function entryKind(e) {
-  return getProgram(e.programId)?.kind === 'circuit' ? 'strength' : 'bike';
+  const p = getProgram(e.programId);
+  if (p?.kind === 'circuit') return 'strength';
+  if (p?.kind === 'custom') return p.sections.some((s) => s.items.some((i) => i.type === 'bike')) ? 'bike' : 'strength';
+  return 'bike';
 }
 
 function groupByDay(list) {
@@ -969,6 +1020,11 @@ renderHome();
 renderExercises();
 renderResume();
 initGoals();
+initPlans({
+  onChange: renderHome,
+  onStart: (id) => startRunner(id, {}),
+  weightKg: () => settings.weightKg,
+});
 renderHomeGoals();
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {

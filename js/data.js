@@ -1,4 +1,5 @@
 // Static data: exercise library and workout program definitions.
+import { loadPlans } from './store.js';
 
 // Bike intensity levels. MET values are rough estimates for stationary cycling
 // (Compendium of Physical Activities) and are only used for calorie estimates.
@@ -350,6 +351,17 @@ export const PROGRAMS = [
   },
 ];
 
+// Short summary of a user plan, e.g. "Isınma · 10× Aralıklar · Soğuma".
+function describePlan(plan) {
+  return plan.sections
+    .filter((s) => s.items.length)
+    .map((s) => `${s.repeat > 1 ? `${s.repeat}× ` : ''}${s.name || `${s.items.length} adım`}`)
+    .join(' · ');
+}
+
 export function getProgram(id) {
-  return PROGRAMS.find((p) => p.id === id);
+  const builtIn = PROGRAMS.find((p) => p.id === id);
+  if (builtIn) return builtIn;
+  const plan = loadPlans().find((p) => p.id === id);
+  return plan && { ...plan, kind: 'custom', desc: describePlan(plan) };
 }

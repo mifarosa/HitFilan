@@ -26,6 +26,11 @@
       <div id="home-goals"></div>
       <div id="week-summary" class="card week"></div>
 
+      <div class="section-head">
+        <h2 class="section-title">Planlarım</h2>
+      </div>
+      <div id="plan-list" class="program-list"></div>
+
       <h2 class="section-title">Kondisyon Bisikleti</h2>
       <div id="bike-list" class="program-list"></div>
 
@@ -202,6 +207,29 @@
   </nav>
 
   <dialog id="program-sheet" class="sheet"></dialog>
+
+  <div id="editor" class="editor" hidden>
+    <header class="editor-head">
+      <button type="button" class="btn ghost" id="ed-cancel">Vazgeç</button>
+      <h2 id="ed-title">Yeni plan</h2>
+      <button type="button" class="btn primary" id="ed-save">Kaydet</button>
+    </header>
+    <div class="editor-body">
+      <input type="text" id="ed-name" class="ed-name" maxlength="40" placeholder="Plan adı (ör. Salı aralıkları)" aria-label="Plan adı">
+      <p class="ed-help">Planı bölümlerden kur. Her bölüm bir ya da birkaç adımdan oluşur ve istediğin kadar tur tekrar eder. Örnek: Isınma ×1 · Aralıklar ×10 (1 dk orta + 1 dk ağır) · Soğuma ×1.</p>
+      <div id="ed-sections"></div>
+      <button type="button" class="btn ghost full" id="ed-add-section">+ Bölüm ekle</button>
+    </div>
+    <footer class="editor-foot">
+      <div class="timeline" id="ed-timeline"></div>
+      <div class="editor-foot-row">
+        <span id="ed-summary" class="meta"></span>
+        <button type="button" class="btn primary" id="ed-start">Kaydet ve başla</button>
+      </div>
+    </footer>
+  </div>
+
+  <dialog id="step-picker" class="sheet"></dialog>
 
   <div id="runner" class="runner" hidden>
     <div class="runner-top">

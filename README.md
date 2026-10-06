@@ -3,6 +3,7 @@ Home Gym PWA App — ev için kondisyon bisikleti zamanlayıcısı ve kuvvet dev
 
 ## Özellikler
 - **Bisiklet Akışı** (30 / 40 / 45 / 50 dk / 1 saat): boşta ısınma → orta → 1’er dk orta/ağır aralıklar → orta → boşta soğuma
+- **Planlarım**: kendi planını bölümlerden kur (her bölüm istediğin kadar tur tekrar eder); adım olarak bisiklet seviyeleri, hareket kütüphanesi, dinlenme ya da kendi yazdığın hareketler. Hazır planlar kopyalanıp düzenlenebilir.
 - **Kuvvet devreleri** (vücut ağırlığı + tek 7.5 kg dumbbell): Dumbbell Yağ Yakıcı, Vücut Ağırlığı HIIT, Kısa Kuvvet, Core Bitirici; çalış/dinlen/tur süreleri ayarlanabilir
 - **Bisiklet + Core** kombinasyonu
 - Müziğin üzerine çalan bip sesleri (3-2-1, geçiş, taraf değiştir), isteğe bağlı Türkçe sesli anons, titreşim

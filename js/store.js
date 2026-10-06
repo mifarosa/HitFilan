@@ -85,6 +85,18 @@ export function saveGoals(goals) {
   write(GOALS_KEY, goals);
 }
 
+// User-built workout plans (see js/plans.js for the shape).
+const PLANS_KEY = 'hitfilan.plans';
+
+export function loadPlans() {
+  const list = read(PLANS_KEY, []);
+  return Array.isArray(list) ? list : [];
+}
+
+export function savePlans(plans) {
+  write(PLANS_KEY, plans);
+}
+
 export function removeHistory(id) {
   write(HISTORY_KEY, loadHistory().filter((e) => e.id !== id));
 }

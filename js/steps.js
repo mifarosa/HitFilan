@@ -62,8 +62,60 @@ function prepStep(label, hint, dur = PREP_SECONDS) {
 }
 
 // Returns the step list for a program id. `opts` can override circuit timing.
+// Default names for bike levels inside user plans.
+const BIKE_NAMES = { easy: 'Boşta pedal', moderate: 'Orta tempo', hard: 'Ağır tempo' };
+
+function planItemStep(item, section) {
+  const single = section.items.length === 1 && section.name;
+  if (item.type === 'bike') {
+    return {
+      label: item.name || (single ? section.name : BIKE_NAMES[item.level]),
+      level: item.level,
+      tag: LEVELS[item.level].label,
+      hint: LEVELS[item.level].hint,
+      dur: item.dur,
+    };
+  }
+  if (item.type === 'exercise') {
+    const ex = EXERCISES[item.exercise];
+    return { label: ex.name, level: 'work', tag: 'Çalış', hint: ex.how, exercise: item.exercise, dur: item.dur };
+  }
+  if (item.type === 'rest') {
+    return { label: item.name || 'Dinlen', level: 'rest', tag: 'Dinlen', hint: LEVELS.rest.hint, dur: item.dur };
+  }
+  // Free-form step the user typed in
+  const rest = item.level === 'rest';
+  return { label: item.name, level: rest ? 'rest' : 'work', tag: rest ? 'Dinlen' : 'Çalış', hint: '', dur: item.dur };
+}
+
+// Expands a user plan: each section's steps repeat `repeat` times (rounds).
+function planSteps(plan) {
+  const steps = [];
+  for (const section of plan.sections) {
+    const n = Math.max(1, section.repeat || 1);
+    for (let r = 1; r <= n; r++) {
+      for (const item of section.items) {
+        const s = planItemStep(item, section);
+        if (n > 1) s.tag = `${section.name || 'Tur'} ${r}/${n} · ${s.tag}`;
+        else if (section.name && s.label !== section.name) s.tag = `${section.name} · ${s.tag}`;
+        steps.push(s);
+      }
+    }
+  }
+  // A workout never ends on a rest.
+  while (steps.length > 1 && steps[steps.length - 1].level === 'rest') steps.pop();
+  return steps;
+}
+
+// Steps for a user plan object (also used for the editor's live preview).
+export function buildPlanSteps(plan) {
+  const bike = plan.sections.some((s) => s.items.some((i) => i.type === 'bike'));
+  return [prepStep('Hazırlan', bike ? 'Müziğini aç, suyunu yanına al.' : 'Matını hazırla.'), ...planSteps(plan)];
+}
+
 export function buildSteps(programId, opts = {}) {
   const program = getProgram(programId);
+  if (program.kind === 'custom') return buildPlanSteps(program);
   if (program.kind === 'bike') {
     return [prepStep('Bisiklete geç', 'Müziğini aç, suyunu yanına al.'), ...bikeSteps(program)];
   }
