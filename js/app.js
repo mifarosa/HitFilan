@@ -3,6 +3,7 @@ import {
   buildSteps, totalSeconds, estimateKcal, formatTime, programInfo,
 } from './steps.js';
 import { SequenceTimer } from './timer.js';
+import { visualHTML } from './visual.js';
 import { renderGoals, initGoals, todayGoalsHTML } from './goals.js';
 import {
   initPlans, openEditor, deletePlan, duplicatePlan, planFromProgram, planRowsHTML,
@@ -128,7 +129,7 @@ function renderPlans() {
   $('#plan-list').innerHTML = plans.map(programCard).join('') + `
     <button type="button" class="card new-plan" id="new-plan">
       <span class="new-plan-plus" aria-hidden="true">+</span>
-      <span><b>Yeni plan oluştur</b><small>${plans.length ? 'Bisiklet, hareket ya da kendi adımların' : 'Kendi bisiklet akışını ya da hareket devreni kur'}</small></span>
+      <span><b>Yeni plan oluştur</b><small>Dumbbell, vücut ağırlığı, bisiklet ya da kendi hareketlerin</small></span>
     </button>`;
   $('#new-plan').addEventListener('click', () => openEditor());
 }
@@ -212,6 +213,7 @@ function exerciseDetails(id) {
   return `
     <details class="ex">
       <summary><span>${esc(ex.name)}</span><small>${esc(ex.target)}</small></summary>
+      ${visualHTML(id, 'full', esc(ex.name))}
       <p>${esc(ex.how)}</p>
       <p class="variant"><b>Kolay:</b> ${esc(ex.easier)}</p>
       <p class="variant"><b>Zor:</b> ${esc(ex.harder)}</p>
@@ -350,18 +352,29 @@ sheet.addEventListener('click', (e) => {
 
 function renderExercises(filter = 'all') {
   const list = Object.entries(EXERCISES).filter(([, ex]) => filter === 'all' || ex.equip === filter);
-  $('#exercise-list').innerHTML = list.map(([, ex]) => `
-    <details class="card ex">
+  $('#exercise-list').innerHTML = list.map(([id, ex]) => `
+    <details class="card ex lib" data-ex="${id}">
       <summary>
-        <span>${esc(ex.name)}</span>
-        <span class="badge ${ex.equip}">${ex.equip === 'dumbbell' ? `${settings.dumbbellKg} kg dumbbell` : 'Vücut ağırlığı'}</span>
-        <small>${esc(ex.target)}</small>
+        ${visualHTML(id, 'thumb', esc(ex.name))}
+        <span class="lib-text">
+          <span class="lib-name">${esc(ex.name)}</span>
+          <span class="badge ${ex.equip}">${ex.equip === 'dumbbell' ? `${settings.dumbbellKg} kg dumbbell` : 'Vücut ağırlığı'}</span>
+          <small>${esc(ex.target)}</small>
+        </span>
       </summary>
+      <div class="lib-visual" data-visual="${id}"></div>
       <p>${esc(ex.how)}</p>
       <p class="variant"><b>Kolay:</b> ${esc(ex.easier)}</p>
       <p class="variant"><b>Zor:</b> ${esc(ex.harder)}</p>
     </details>`).join('');
 }
+
+// Load the large animated picture only when a card is opened.
+$('#exercise-list').addEventListener('toggle', (e) => {
+  const d = e.target;
+  const slot = d.open && d.querySelector('[data-visual]:empty');
+  if (slot) slot.innerHTML = visualHTML(slot.dataset.visual, 'full', esc(EXERCISES[slot.dataset.visual].name));
+}, true);
 
 $$('#exercise-filter .chip').forEach((c) => c.addEventListener('click', () => {
   $$('#exercise-filter .chip').forEach((x) => x.classList.toggle('active', x === c));
@@ -670,7 +683,7 @@ function warnAction(step, next) {
     const verb = to.res > from.res ? 'Direnci artır' : to.res < from.res ? 'Direnci azalt' : 'Direnç aynı';
     return `${verb} → ${to.res} · ${to.rpm} rpm`;
   }
-  if (next.level === 'work') return `Hazırlan: ${next.hint || next.label}`;
+  if (next.level === 'work') return next.exercise ? 'Hazırlan, pozisyonunu al.' : `Hazırlan: ${next.hint || next.label}`;
   if (next.level === 'rest') return 'Son saniyeler, bırakma!';
   return next.hint || '';
 }
@@ -710,9 +723,26 @@ function renderTargets(level) {
   }
 }
 
+// Exercise photo on the runner; during the countdown it shows the next move.
+function renderVisual(step) {
+  const el = $('#ex-visual');
+  const id = step?.exercise;
+  runner.classList.toggle('has-visual', !!id);
+  if (!id) {
+    el.hidden = true;
+    el.dataset.ex = '';
+    return;
+  }
+  el.hidden = false;
+  if (el.dataset.ex === id) return;
+  el.dataset.ex = id;
+  el.innerHTML = visualHTML(id, 'full', esc(EXERCISES[id].name));
+}
+
 function renderStep(step, index) {
   warnActive = false;
   runner.classList.remove('warning');
+  renderVisual(step);
   runner.dataset.level = step.level;
   $('#step-tag').textContent = step.tag;
   $('#step-label').textContent = step.label;
@@ -739,6 +769,7 @@ function renderWarning(step, next) {
   $('#step-label').textContent = next.label;
   $('#step-hint').textContent = warnAction(step, next);
   renderTargets(next.level);
+  if (next.exercise) renderVisual(next);
 }
 
 function renderTick(t) {
@@ -1024,6 +1055,7 @@ initPlans({
   onChange: renderHome,
   onStart: (id) => startRunner(id, {}),
   weightKg: () => settings.weightKg,
+  resistance: (level) => bikeTarget(level)?.res ?? '',
 });
 renderHomeGoals();
 

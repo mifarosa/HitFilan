@@ -10,6 +10,7 @@
 import { EXERCISES, LEVELS, getProgram } from './data.js';
 import { loadPlans, savePlans } from './store.js';
 import { buildPlanSteps, totalSeconds, estimateKcal, formatTime } from './steps.js';
+import { visualHTML } from './visual.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -21,7 +22,9 @@ const DEFAULT_DUR = { bike: 60, exercise: 40, rest: 20, custom: 30 };
 const BIKE_NAMES = { easy: 'Boşta', moderate: 'Orta', hard: 'Ağır' };
 const MAX_REPEAT = 50;
 
-let hooks = { onChange() {}, onStart() {}, weightKg: () => 75 };
+let hooks = {
+  onChange() {}, onStart() {}, weightKg: () => 75, resistance: () => '',
+};
 let draft = null; // plan being edited
 let pickerSection = -1;
 
@@ -103,6 +106,13 @@ function itemName(item) {
   if (item.type === 'exercise') return EXERCISES[item.exercise]?.name || 'Hareket';
   if (item.type === 'rest') return item.name || 'Dinlen';
   return item.name;
+}
+
+function itemThumb(item) {
+  const id = item.type === 'exercise' ? item.exercise : item.type === 'bike' ? 'bike' : null;
+  const bar = `<i class="ed-bar" style="background:${LEVELS[itemLevel(item)].color}"></i>`;
+  if (!id) return `<span class="ed-thumb">${bar}</span>`;
+  return `<span class="ed-thumb">${visualHTML(id, 'thumb')}${bar}</span>`;
 }
 
 function itemLevel(item) {
@@ -205,7 +215,7 @@ function sectionHTML(s, si) {
       </div>
       <ol class="ed-items">${s.items.map((it, ii) => `
         <li class="ed-item" data-ii="${ii}">
-          <span class="dot" style="background:${LEVELS[itemLevel(it)].color}"></span>
+          ${itemThumb(it)}
           <span class="ed-item-name">${esc(itemName(it))}</span>
           <div class="ed-dur">
             <button type="button" data-dur="-1" aria-label="Süreyi azalt">−</button>
@@ -294,12 +304,53 @@ function bindEditor() {
 
 /* ---------- Step picker ---------- */
 
+const PICK_TABS = [
+  { id: 'dumbbell', label: 'Dumbbell' },
+  { id: 'bodyweight', label: 'Vücut ağırlığı' },
+  { id: 'bike', label: 'Bisiklet' },
+  { id: 'other', label: 'Dinlenme / Diğer' },
+];
+let pickTab = 'dumbbell';
+
+function exerciseCards(equip) {
+  return Object.entries(EXERCISES).filter(([, ex]) => ex.equip === equip).map(([id, ex]) => `
+    <button type="button" class="pick-card" data-ex="${id}">
+      ${visualHTML(id, 'thumb', esc(ex.name))}
+      <span class="pick-card-text"><b>${esc(ex.name)}</b><small>${esc(ex.target)}</small></span>
+    </button>`).join('');
+}
+
+function pickTabHTML(tab) {
+  if (tab === 'dumbbell' || tab === 'bodyweight') {
+    return `<div class="pick-grid">${exerciseCards(tab)}</div>`;
+  }
+  if (tab === 'bike') {
+    return `
+      ${visualHTML('bike', 'full', 'Kondisyon bisikleti')}
+      <div class="pick-row">
+        ${['easy', 'moderate', 'hard'].map((l) => `
+          <button type="button" class="pick-bike" data-bike="${l}" style="--c:${LEVELS[l].color}">
+            ${BIKE_NAMES[l]}<small>direnç ${hooks.resistance(l)} · ${LEVELS[l].rpm} rpm</small>
+          </button>`).join('')}
+      </div>`;
+  }
+  return `
+    <div class="pick-row">
+      <button type="button" class="pick-bike" data-rest style="--c:${LEVELS.rest.color}">Dinlen<small>nefes al, su iç</small></button>
+    </div>
+    <h4>Listede yoksa kendin ekle</h4>
+    <div class="pick-custom">
+      <input type="text" id="pick-name" maxlength="40" placeholder="Hareket adı (ör. İp atlama)">
+      <div class="chips">
+        <button type="button" class="chip active" data-kind="work">Çalış</button>
+        <button type="button" class="chip" data-kind="rest">Dinlen</button>
+      </div>
+      <button type="button" class="btn primary full" id="pick-add">Ekle</button>
+    </div>`;
+}
+
 function openPicker(si) {
   pickerSection = si;
-  const exercises = Object.entries(EXERCISES);
-  const group = (equip) => exercises.filter(([, ex]) => ex.equip === equip)
-    .map(([id, ex]) => `<button type="button" class="pick-ex" data-ex="${id}">${esc(ex.name)}<small>${esc(ex.target)}</small></button>`).join('');
-
   picker().innerHTML = `
     <form method="dialog" class="sheet-inner">
       <div class="sheet-head">
@@ -308,34 +359,10 @@ function openPicker(si) {
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
         </button>
       </div>
-
-      <h4>Bisiklet</h4>
-      <div class="pick-row">
-        ${['easy', 'moderate', 'hard'].map((l) => `
-          <button type="button" class="pick-bike" data-bike="${l}" style="--c:${LEVELS[l].color}">
-            ${BIKE_NAMES[l]}<small>${LEVELS[l].rpm} rpm</small>
-          </button>`).join('')}
+      <div class="chips pick-tabs" role="tablist">
+        ${PICK_TABS.map((t) => `<button type="button" class="chip ${t.id === pickTab ? 'active' : ''}" role="tab" data-tab="${t.id}">${t.label}</button>`).join('')}
       </div>
-
-      <h4>Dinlenme</h4>
-      <div class="pick-row">
-        <button type="button" class="pick-bike" data-rest style="--c:${LEVELS.rest.color}">Dinlen<small>${DEFAULT_DUR.rest} sn</small></button>
-      </div>
-
-      <h4>Vücut ağırlığı</h4>
-      <div class="pick-grid">${group('bodyweight')}</div>
-      <h4>Dumbbell</h4>
-      <div class="pick-grid">${group('dumbbell')}</div>
-
-      <h4>Listede yoksa kendin ekle</h4>
-      <div class="pick-custom">
-        <input type="text" id="pick-name" maxlength="40" placeholder="Hareket adı (ör. İp atlama)">
-        <div class="chips">
-          <button type="button" class="chip active" data-kind="work">Çalış</button>
-          <button type="button" class="chip" data-kind="rest">Dinlen</button>
-        </div>
-        <button type="button" class="btn primary full" id="pick-add">Ekle</button>
-      </div>
+      <div id="pick-body"></div>
     </form>`;
 
   const add = (item) => {
@@ -347,24 +374,31 @@ function openPicker(si) {
     rows[rows.length - 1]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
   };
 
-  $$('[data-bike]', picker()).forEach((b) => b.addEventListener('click', () => add({ type: 'bike', level: b.dataset.bike, dur: DEFAULT_DUR.bike })));
-  $('[data-rest]', picker()).addEventListener('click', () => add({ type: 'rest', dur: DEFAULT_DUR.rest }));
-  $$('[data-ex]', picker()).forEach((b) => b.addEventListener('click', () => add({ type: 'exercise', exercise: b.dataset.ex, dur: DEFAULT_DUR.exercise })));
+  const showTab = (tab) => {
+    pickTab = tab;
+    $$('[data-tab]', picker()).forEach((c) => c.classList.toggle('active', c.dataset.tab === tab));
+    const body = $('#pick-body', picker());
+    body.innerHTML = pickTabHTML(tab);
+    $$('[data-bike]', body).forEach((b) => b.addEventListener('click', () => add({ type: 'bike', level: b.dataset.bike, dur: DEFAULT_DUR.bike })));
+    $('[data-rest]', body)?.addEventListener('click', () => add({ type: 'rest', dur: DEFAULT_DUR.rest }));
+    $$('[data-ex]', body).forEach((b) => b.addEventListener('click', () => add({ type: 'exercise', exercise: b.dataset.ex, dur: DEFAULT_DUR.exercise })));
+    let kind = 'work';
+    $$('[data-kind]', body).forEach((c) => c.addEventListener('click', () => {
+      kind = c.dataset.kind;
+      $$('[data-kind]', body).forEach((x) => x.classList.toggle('active', x === c));
+    }));
+    $('#pick-add', body)?.addEventListener('click', () => {
+      const name = $('#pick-name', body).value.trim();
+      if (!name) {
+        $('#pick-name', body).focus();
+        return;
+      }
+      add({ type: 'custom', name, level: kind, dur: DEFAULT_DUR.custom });
+    });
+  };
 
-  let kind = 'work';
-  $$('[data-kind]', picker()).forEach((c) => c.addEventListener('click', () => {
-    kind = c.dataset.kind;
-    $$('[data-kind]', picker()).forEach((x) => x.classList.toggle('active', x === c));
-  }));
-  $('#pick-add', picker()).addEventListener('click', () => {
-    const name = $('#pick-name', picker()).value.trim();
-    if (!name) {
-      $('#pick-name', picker()).focus();
-      return;
-    }
-    add({ type: 'custom', name, level: kind, dur: DEFAULT_DUR.custom });
-  });
-
+  $$('[data-tab]', picker()).forEach((c) => c.addEventListener('click', () => showTab(c.dataset.tab)));
+  showTab(pickTab);
   picker().showModal();
 }
 

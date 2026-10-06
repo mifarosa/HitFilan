@@ -154,6 +154,23 @@ export const EXERCISES = {
     harder: 'İnişi 3 saniyede yap.',
   },
 
+  situp: {
+    name: 'Mekik (Sit-up)',
+    equip: 'bodyweight',
+    target: 'Karın, kalça fleksörleri',
+    how: 'Sırtüstü, dizler bükülü, ayaklar yerde. Gövdeyi tamamen dikleşene kadar kaldır, kontrollü geri in.',
+    easier: 'Ayaklarını bir koltuğun altına sabitle ya da yarım kalk (crunch).',
+    harder: 'Dumbbell’ı göğsünde tut.',
+  },
+  superman: {
+    name: 'Superman',
+    equip: 'bodyweight',
+    target: 'Bel, kalça, sırt',
+    how: 'Yüzüstü uzan, kollar önde. Kolları, göğsü ve bacakları aynı anda yerden kaldır, 1-2 sn tut, indir.',
+    easier: 'Önce sadece kolları, sonra sadece bacakları kaldır.',
+    harder: 'Tepede 3 sn bekle.',
+  },
+
   // --- Dumbbell (all of these work with a single 7.5 kg dumbbell) ---
   goblet_squat: {
     name: 'Goblet Squat',
@@ -238,7 +255,109 @@ export const EXERCISES = {
     easier: 'Tempoyu yavaşlat.',
     harder: 'Tek kolla yap, sürenin yarısında değiştir.',
   },
+  db_curl: {
+    name: 'Biceps Curl',
+    equip: 'dumbbell',
+    target: 'Ön kol (biceps)',
+    how: 'Ayakta, dirsek gövdeye yapışık. Dumbbell’ı avuç yukarı bakacak şekilde omza doğru kaldır, yavaş indir. Sürenin yarısında kol değiştir.',
+    easier: 'Hareketi yavaşlat, sallanmadan yap.',
+    harder: 'İnişi 3 saniyede yap.',
+    sides: true,
+  },
+  db_hammer: {
+    name: 'Hammer Curl',
+    equip: 'dumbbell',
+    target: 'Biceps, ön kol',
+    how: 'Dumbbell’ı çekiç tutar gibi (avuç içe bakar) tut, dirseği sabit tutarak omza doğru kaldır. Sürenin yarısında kol değiştir.',
+    easier: 'Hareketi kısalt.',
+    harder: 'Tepede 1 sn bekle.',
+    sides: true,
+  },
+  db_triceps: {
+    name: 'Baş Üstü Triceps',
+    equip: 'dumbbell',
+    target: 'Arka kol (triceps)',
+    how: 'Dumbbell’ı iki elle baş üstünde tut. Dirsekler kulak yanında sabit; dumbbell’ı başın arkasına indir, tekrar yukarı uzat.',
+    easier: 'Oturarak yap.',
+    harder: 'İnişi 3 saniyede yap.',
+  },
+  db_kickback: {
+    name: 'Triceps Kickback',
+    equip: 'dumbbell',
+    target: 'Arka kol (triceps)',
+    how: 'Bir el ve diz sandalyede, sırt düz. Üst kol gövdeye paralel; dirseği açarak dumbbell’ı geriye it. Sürenin yarısında kol değiştir.',
+    easier: 'Hareketi yavaşlat.',
+    harder: 'Tepede 1 sn bekle.',
+    sides: true,
+  },
+  db_lateral: {
+    name: 'Lateral Raise',
+    equip: 'dumbbell',
+    target: 'Omuz (yan)',
+    how: 'Ayakta, dirsek hafif bükük. Dumbbell’ı yana doğru omuz hizasına kaldır, kontrollü indir. Sürenin yarısında kol değiştir.',
+    easier: 'Omuz hizasına kadar değil, biraz altına kaldır.',
+    harder: 'Tepede 1 sn bekle.',
+    sides: true,
+  },
+  db_front: {
+    name: 'Ön Kaldırış',
+    equip: 'dumbbell',
+    target: 'Omuz (ön)',
+    how: 'Dumbbell’ı iki elle uyluklarının önünde tut. Kollar düz, göz hizasına kadar öne kaldır, yavaş indir.',
+    easier: 'Göğüs hizasına kadar kaldır.',
+    harder: 'İnişi 3 saniyede yap.',
+  },
+  db_sumo: {
+    name: 'Sumo Squat',
+    equip: 'dumbbell',
+    target: 'İç bacak, kalça',
+    how: 'Ayaklar geniş, parmak uçları dışa dönük. Dumbbell’ı iki elle aşağıda tut, kalçayı dik tutarak çömel ve kalk.',
+    easier: 'Dumbbell’sız yap.',
+    harder: 'Altta 2 sn bekle.',
+  },
+  db_calf: {
+    name: 'Baldır Kaldırma',
+    equip: 'dumbbell',
+    target: 'Baldır',
+    how: 'Dumbbell bir elde, diğer elle duvara tutun. Topukları kaldırıp parmak uçlarında yüksel, yavaş in.',
+    easier: 'Dumbbell’sız yap.',
+    harder: 'Tek ayak üzerinde yap.',
+  },
+  db_reverse_fly: {
+    name: 'Ters Fly',
+    equip: 'dumbbell',
+    target: 'Arka omuz, üst sırt',
+    how: 'Kalçadan öne eğil, sırt düz. Dumbbell’ı dirsek hafif bükük şekilde yana doğru kaldır, kürek kemiklerini sık. Sürenin yarısında kol değiştir.',
+    easier: 'Daha az eğil.',
+    harder: 'Tepede 1 sn bekle.',
+    sides: true,
+  },
+  db_shrug: {
+    name: 'Shrug',
+    equip: 'dumbbell',
+    target: 'Trapez (omuz üstü)',
+    how: 'Ayakta, dumbbell yanında. Omuzları kulaklara doğru kaldır, 1 sn tut, indir. Sürenin yarısında taraf değiştir.',
+    easier: 'Hareketi yavaşlat.',
+    harder: 'Tepede 2 sn bekle.',
+    sides: true,
+  },
 };
+
+// Exercises with start/end photos in img/ex/<id>-0.webp and -1.webp.
+// Photos: free-exercise-db (github.com/yuhonas/free-exercise-db), public domain (Unlicense).
+const PHOTO_IDS = new Set([
+  'squat', 'pushup', 'reverse_lunge', 'mountain_climber', 'jumping_jack', 'skater', 'plank', 'side_plank',
+  'glute_bridge', 'dead_bug', 'bicycle_crunch', 'leg_raise', 'crunch', 'situp', 'superman',
+  'goblet_squat', 'db_rdl', 'db_row', 'db_press', 'db_swing', 'db_thruster', 'goblet_lunge', 'russian_twist',
+  'floor_press', 'db_curl', 'db_hammer', 'db_triceps', 'db_kickback', 'db_lateral', 'db_front', 'db_sumo',
+  'db_calf', 'db_reverse_fly', 'db_shrug', 'bike',
+]);
+
+export function exercisePhotos(id) {
+  return PHOTO_IDS.has(id) ? [`img/ex/${id}-0.webp`, `img/ex/${id}-1.webp`] : null;
+}
+
+export const PHOTO_FILES = [...PHOTO_IDS].flatMap((id) => [`img/ex/${id}-0.webp`, `img/ex/${id}-1.webp`]);
 
 // Bike flows. Each spec is a list of steady blocks ({ level, min, label })
 // and interval sets ({ intervals: n } = n x (1 min moderate + 1 min hard)).

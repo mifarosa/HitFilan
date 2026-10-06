@@ -893,7 +893,10 @@ body.editing { overflow: hidden; }
   padding: 8px 0;
   border-top: 1px solid var(--line);
 }
-.ed-item .dot { grid-area: dot; align-self: start; margin-top: 6px; }
+.ed-thumb { grid-area: dot; align-self: start; position: relative; display: block; width: 56px; }
+.ed-thumb .ex-visual.thumb { width: 56px; }
+.ed-thumb .ed-bar { display: block; height: 4px; border-radius: 2px; margin-top: 4px; }
+.ed-thumb:not(:has(.ex-visual)) .ed-bar { width: 10px; height: 10px; border-radius: 50%; margin: 6px 0 0; }
 .ed-item-name { grid-area: name; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
 .ed-item .ed-tools { grid-area: tools; }
 .ed-dur { grid-area: dur; display: flex; align-items: center; gap: 6px; }
@@ -952,3 +955,95 @@ body.editing { overflow: hidden; }
   margin-bottom: 8px;
 }
 .pick-custom .chips { margin: 0 0 10px; }
+
+
+/* ---------- Exercise photos ---------- */
+
+.ex-visual {
+  position: relative;
+  aspect-ratio: 3 / 2;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  flex: none;
+}
+.ex-visual img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* Start and end photos alternate, so the move plays like a flip book */
+.ex-visual.anim img + img { animation: ex-play 2.4s ease-in-out infinite; }
+@keyframes ex-play {
+  0%, 38% { opacity: 0; }
+  50%, 88% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.ex-visual.thumb { width: 72px; border-radius: 8px; }
+.ex-visual.full { width: 100%; margin: 10px 0 4px; }
+.ex-visual.none { display: grid; place-items: center; background: var(--surface-2); }
+.ex-ph { width: 50%; height: 50%; stroke: var(--muted); stroke-width: 2.5; }
+.ex-ph circle { fill: none; }
+@media (prefers-reduced-motion: reduce) {
+  .ex-visual.anim img + img { animation: none; }
+}
+
+/* Library cards */
+details.ex.lib summary { flex-wrap: nowrap; gap: 12px; }
+.lib-text { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; }
+.lib-text .lib-name { font-weight: 600; }
+.lib-text small { width: 100%; color: var(--muted); font-weight: 400; font-size: 13px; }
+.lib-visual:empty { display: none; }
+.credit a { color: var(--muted); }
+
+/* Step picker cards */
+.pick-tabs { margin: 14px 0 12px; flex-wrap: wrap; overflow: visible; }
+.pick-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  text-align: left;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.pick-card .ex-visual.thumb { width: 100%; }
+.pick-card-text { padding: 0 4px 4px; }
+.pick-card-text b { display: block; font-size: 14px; }
+.pick-card-text small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+#pick-body > .ex-visual.full { margin-top: 0; max-height: 200px; }
+#pick-body .pick-row { margin-top: 10px; }
+
+/* Runner photo */
+.runner-visual { width: min(80vw, 22vh * 1.5, 340px); margin: 2px 0 10px; }
+/* Never let a tall step overlap or squeeze the bars around it; scroll instead */
+.runner-main { justify-content: safe center; min-height: auto; }
+.runner > :not(.runner-main) { flex-shrink: 0; }
+/* The photo shows the move, so the long how-to text can go */
+.runner.has-visual .step-hint { display: none; }
+.runner.has-visual.warning .step-hint { display: block; min-height: 0; margin-top: 8px; }
+/* During the countdown the big label already names the next step */
+.runner.has-visual.warning .next-step { display: none; }
+@media (max-height: 720px) {
+  .runner-visual { width: min(80vw, 19vh * 1.5, 340px); }
+  .runner.has-visual .ring { width: min(50vw, 21vh, 200px); }
+  .runner.has-visual .step-label { font-size: 24px; margin-bottom: 8px; }
+  .runner.has-visual .totals { margin: 8px 0; }
+  .runner.has-visual .totals b { font-size: 18px; }
+  .runner.has-visual .play-btn { width: 64px; height: 64px; }
+  .runner.has-visual .controls .icon-btn { width: 48px; height: 48px; }
+}
+.runner-visual .ex-visual.full { margin: 0; border-radius: 16px; box-shadow: 0 0 0 3px color-mix(in srgb, var(--lvl) 70%, transparent); }
+.runner.has-visual .ring { width: min(56vw, 25vh, 240px); }
+.runner.has-visual .ring-time { font-size: clamp(44px, 12vw, 72px); }
+
+@media (orientation: landscape) and (max-height: 600px) {
+  .runner-visual { grid-area: targets; width: auto; max-width: 100%; margin: 4px 0 0; }
+  .runner-visual .ex-visual.full { width: auto; height: min(28vh, 140px); aspect-ratio: 3 / 2; }
+  .runner.has-visual.warning .step-hint { margin-top: 4px; }
+  .runner.has-visual .ring { width: min(68vh, 40vw, 320px); }
+  .runner.has-visual .ring-time { font-size: clamp(48px, 13vh, 92px); }
+}
