@@ -1107,3 +1107,32 @@ details.ex.lib summary { flex-wrap: nowrap; gap: 12px; }
 .ed-mode button { min-width: 0; height: 34px; padding: 0 10px; border-radius: 0; background: transparent; font-size: 13px; font-weight: 600; color: var(--muted); }
 .ed-mode button.active { background: var(--text); color: var(--bg); }
 .reps-note { margin-top: 10px; }
+
+/* ---------- Cloud backup ---------- */
+
+.topbar { display: flex; align-items: center; justify-content: space-between; }
+.sync-badge {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--muted);
+}
+.sync-badge svg { width: 22px; height: 22px; }
+.sync-badge .sb-ok { display: none; }
+.sync-badge[data-state="synced"] { color: var(--lvl-easy); }
+.sync-badge[data-state="synced"] .sb-ok { display: block; }
+.sync-badge[data-state="pending"], .sync-badge[data-state="signed-out"] { color: var(--lvl-moderate); }
+.sync-badge[data-state="error"] { color: var(--danger); }
+.sync-badge[data-state="syncing"], .sync-badge[data-state="loading"] { animation: blink 1.2s steps(2) infinite; }
+
+.sync-card h3 { margin: 0 0 6px; font-size: 17px; }
+.sync-card .meta { margin: 0 0 12px; line-height: 1.5; }
+.sync-card .meta b { color: var(--text); font-weight: 600; }
+.sync-card .btn.full:last-child { margin-bottom: 0; }
+.sync-card[data-state="synced"] { border-color: color-mix(in srgb, var(--lvl-easy) 50%, var(--line)); }
+.sync-ok { color: var(--lvl-easy); }
+.sync-err { color: var(--danger) !important; }

@@ -1,5 +1,5 @@
 // Offline cache for the app shell. Bump CACHE when shipping changes.
-const CACHE = 'hitfilan-v9';
+const CACHE = 'hitfilan-v10';
 const ASSETS = [
   './',
   'index.html',
@@ -10,6 +10,8 @@ const ASSETS = [
   'js/goals.js',
   'js/plans.js',
   'js/visual.js',
+  'js/sync.js',
+  'js/sync-core.js',
   'js/steps.js',
   'js/store.js',
   'js/timer.js',
