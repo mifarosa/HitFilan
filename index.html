@@ -18,6 +18,9 @@
 <body>
   <header class="topbar">
     <h1>Hit<span>Filan</span></h1>
+    <button type="button" class="sync-badge" id="sync-badge" hidden aria-label="Bulut yedeği durumu">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18h10a4 4 0 00.6-7.95A6 6 0 006.2 9.1 4.5 4.5 0 007 18z"/><path class="sb-ok" d="M9.5 13.5l2 2 3.5-4"/></svg>
+    </button>
   </header>
 
   <main>
@@ -119,6 +122,7 @@
     </section>
 
     <section id="view-settings" class="view" aria-label="Ayarlar">
+      <div class="card sync-card" id="sync-card"></div>
       <form id="settings-form" class="card settings">
         <label class="row">
           <span>Vücut ağırlığın (kg)<small>Kalori tahmini için</small></span>

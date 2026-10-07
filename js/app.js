@@ -4,6 +4,7 @@ import {
 } from './steps.js';
 import { SequenceTimer } from './timer.js';
 import { visualHTML } from './visual.js';
+import { initSync, signIn, signOut } from './sync.js';
 import { renderGoals, initGoals, todayGoalsHTML } from './goals.js';
 import {
   initPlans, openEditor, deletePlan, duplicatePlan, planFromProgram, planRowsHTML,
@@ -640,7 +641,7 @@ $('#test-sound').addEventListener('click', () => {
 });
 
 $('#clear-history').addEventListener('click', () => {
-  if (confirm('Tüm antrenman geçmişi silinsin mi?')) {
+  if (confirm('Tüm antrenman geçmişi silinsin mi? Bulut yedeği açıksa oradan da silinir.')) {
     clearHistory();
     renderWeek($('#week-summary'));
   }
@@ -1082,6 +1083,69 @@ renderHome();
 renderExercises();
 renderResume();
 initGoals();
+/* ---------- Cloud backup ---------- */
+
+const timeFmt = new Intl.DateTimeFormat('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+function renderSync(st) {
+  const card = $('#sync-card');
+  const badge = $('#sync-badge');
+  // Not set up (no Firebase project configured): no card, no badge.
+  card.hidden = st.state === 'unavailable';
+  if (card.hidden) {
+    badge.hidden = true;
+    return;
+  }
+  const who = st.email ? `<b>${esc(st.email)}</b>` : '';
+  const views = {
+    off: `
+      <h3>Bulut yedeği</h3>
+      <p class="meta">Antrenman geçmişin, planların, hedeflerin ve ayarların Google hesabına kaydedilsin. Telefon değişse ya da tarayıcı verisi silinse de kaybolmaz; başka cihazdan girince hepsi gelir.</p>
+      <button type="button" class="btn primary full" data-sync="in">Google ile giriş yap ve yedekle</button>`,
+    loading: '<h3>Bulut yedeği</h3><p class="meta">Bağlanıyor…</p>',
+    'signed-out': `
+      <h3>Bulut yedeği</h3>
+      <p class="meta">Yedeklemeye devam etmek için Google ile giriş yap.</p>
+      <button type="button" class="btn primary full" data-sync="in">Google ile giriş yap</button>`,
+    syncing: `<h3>Bulut yedeği</h3><p class="meta">Eşitleniyor… ${who}</p>`,
+    synced: `
+      <h3><span class="sync-ok">✓</span> Bulut yedeği açık</h3>
+      <p class="meta">${who}<br>Her antrenman, plan ve hedef otomatik kaydediliyor. Son eşitleme: ${st.at ? timeFmt.format(st.at) : '—'}</p>
+      <button type="button" class="btn ghost full" data-sync="out">Bu cihazda yedeği kapat</button>`,
+    pending: `
+      <h3>Bulut yedeği</h3>
+      <p class="meta">${who}<br>İnternet yok; değişiklikler telefonda duruyor, bağlanınca yüklenecek.</p>`,
+    error: `
+      <h3>Bulut yedeği</h3>
+      <p class="meta sync-err">${esc(st.message || 'Bir sorun oldu.')}</p>
+      <button type="button" class="btn primary full" data-sync="in">Tekrar dene</button>
+      <button type="button" class="btn ghost full" data-sync="out">Yedeği kapat</button>`,
+  };
+  card.innerHTML = views[st.state] || views.off;
+  card.dataset.state = st.state;
+  $('[data-sync="in"]', card)?.addEventListener('click', () => signIn());
+  $('[data-sync="out"]', card)?.addEventListener('click', () => {
+    if (confirm('Bu cihazda bulut yedeği kapatılsın mı? Buluttaki ve telefondaki verilerin silinmez.')) signOut();
+  });
+
+  badge.hidden = st.state === 'off';
+  badge.dataset.state = st.state;
+  badge.title = { synced: 'Yedeklendi', pending: 'Bağlanınca yüklenecek', error: 'Yedekleme sorunu', syncing: 'Eşitleniyor', loading: 'Bağlanıyor', 'signed-out': 'Giriş gerekli' }[st.state] || '';
+}
+
+// Another device changed something: reload everything from storage.
+function refreshFromStorage() {
+  settings = loadSettings();
+  fillSettings();
+  renderHome();
+  renderHomeGoals();
+  renderResume();
+  if ($('#view-history').classList.contains('active')) renderHistory();
+  if ($('#view-goals').classList.contains('active')) renderGoals();
+}
+
+$('#sync-badge').addEventListener('click', () => showView('settings'));
+
 initPlans({
   onChange: renderHome,
   onStart: (id) => startRunner(id, {}),
@@ -1090,6 +1154,7 @@ initPlans({
   defaultReps: () => settings.weightReps,
 });
 renderHomeGoals();
+initSync({ onStatus: renderSync, onRemoteChange: refreshFromStorage });
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   navigator.serviceWorker.register('sw.js').catch(() => {});
