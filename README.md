@@ -25,11 +25,17 @@ Canlı adres: https://hitfilan.mifarosa.com (GitHub Pages, `main` dalı, kök kl
 ## Bulut yedeği (Firebase)
 Ayarlar → **Bulut yedeği** ile Google hesabıyla giriş yapılınca antrenman geçmişi, planlar, hedefler ve ayarlar Firestore'a kaydedilir ve cihazlar arasında eşitlenir. Uygulama önce telefondaki veriyle çalışır; internet yokken yapılan değişiklikler bağlanınca yüklenir. Aynı kayıt iki yerde değiştiyse en yenisi geçerli olur, silinen kayıtlar her yerde silinir.
 
-- Kod: `js/sync.js` (Firebase bağlantısı), `js/sync-core.js` (birleştirme kuralları), `js/store.js` (değişiklik takibi).
-- Firebase projesi Ekünye ile ortaktır (`ekunye-d7c7f`); HitFilan verisi `hitfilan/{uid}/items` altında durur.
-- Bir kerelik kurulum (Firebase console):
-  1. **Authentication → Settings → Authorized domains**: `hitfilan.mifarosa.com` ekle.
-  2. **Firestore → Rules**: bu depodaki `firestore.rules` dosyasının tamamını yapıştırıp yayınla (Ekünye kuralları aynen içinde).
+- Kod: `js/sync.js` (Firebase bağlantısı), `js/sync-core.js` (birleştirme kuralları), `js/store.js` (değişiklik takibi), `js/firebase-config.js` (proje ayarları).
+- Veri yolu: `users/{uid}/items/{docId}`; kurallar `firestore.rules` içinde.
+- `js/firebase-config.js` boşken (`null`) bulut yedeği uygulamada görünmez.
+
+### Firebase kurulumu (bir kerelik)
+1. [console.firebase.google.com](https://console.firebase.google.com) → **Proje ekle** → ad: `hitfilan` (Google Analytics gerekmez).
+2. **Build → Authentication → Get started → Sign-in method → Google** → Enable → Save.
+3. **Authentication → Settings → Authorized domains** → `hitfilan.mifarosa.com` ekle.
+4. **Build → Firestore Database → Create database** → konum `eur3 (europe-west)` → production mode.
+5. **Firestore → Rules** → `firestore.rules` dosyasını yapıştır → **Publish**.
+6. **Project settings → General → Your apps → Web (`</>`)** → uygulama adı `HitFilan` → kaydet; gösterilen `firebaseConfig` nesnesini `js/firebase-config.js` içine koy.
 
 ## Kaynaklar
 Hareket fotoğrafları [free-exercise-db](https://github.com/yuhonas/free-exercise-db) projesinden alınmıştır (Unlicense, kamu malı). Görseller 480 px WebP'ye küçültülüp `img/ex/` altında saklanır.

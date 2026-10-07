@@ -12,6 +12,7 @@ const ASSETS = [
   'js/visual.js',
   'js/sync.js',
   'js/sync-core.js',
+  'js/firebase-config.js',
   'js/steps.js',
   'js/store.js',
   'js/timer.js',

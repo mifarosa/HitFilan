@@ -1090,6 +1090,12 @@ const timeFmt = new Intl.DateTimeFormat('tr-TR', { hour: '2-digit', minute: '2-d
 function renderSync(st) {
   const card = $('#sync-card');
   const badge = $('#sync-badge');
+  // Not set up (no Firebase project configured): no card, no badge.
+  card.hidden = st.state === 'unavailable';
+  if (card.hidden) {
+    badge.hidden = true;
+    return;
+  }
   const who = st.email ? `<b>${esc(st.email)}</b>` : '';
   const views = {
     off: `

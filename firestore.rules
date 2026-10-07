@@ -1,19 +1,17 @@
 rules_version = '2';
 
-// Rules for the shared Firebase project (ekunye-d7c7f), used by two apps:
-//  - E-Künye: users/{uid}; entries are stored encrypted, so the server only ever sees ciphertext.
-//  - HitFilan: hitfilan/{uid}/items; workout history, plans, goals and settings.
-// Paste this whole file into Firebase console > Firestore > Rules. The E-Künye
-// part is an exact copy of firestore.rules in mifarosa/ekunye; keep both in sync.
+// HitFilan cloud backup (js/sync.js). Each signed-in user can only reach
+// users/{their uid}/items; one document per record:
+//   { kind: 'settings'|'history'|'plan'|'goal', data: JSON string or null,
+//     updatedAt: int (ms), deleted: bool }
+// Paste into Firebase console > Firestore Database > Rules and publish.
 service cloud.firestore {
   match /databases/{database}/documents {
     function isOwner(uid) {
       return request.auth != null && request.auth.uid == uid;
     }
 
-    // HitFilan backup (js/sync.js in mifarosa/HitFilan). Each signed-in user
-    // can only reach hitfilan/{their uid}. One document per record.
-    match /hitfilan/{uid}/items/{itemId} {
+    match /users/{uid}/items/{itemId} {
       allow read, delete: if isOwner(uid);
       allow create, update: if isOwner(uid)
         && itemId.size() <= 80
@@ -25,28 +23,9 @@ service cloud.firestore {
         && request.resource.data.deleted is bool;
     }
 
-    // Key parameters: random salt, PBKDF2 iterations and an encrypted check value.
-    match /users/{uid} {
-      allow read, delete: if isOwner(uid);
-      allow create, update: if isOwner(uid)
-        && request.resource.data.keys().hasOnly(['v', 'salt', 'iter', 'check'])
-        && request.resource.data.v is int
-        && request.resource.data.salt is string && request.resource.data.salt.size() <= 64
-        && request.resource.data.iter is int && request.resource.data.iter >= 100000
-        && request.resource.data.check is map
-        && request.resource.data.check.keys().hasOnly(['iv', 'ct']);
-
-      // One document per entry.
-      match /items/{itemId} {
-        allow read, delete: if isOwner(uid);
-        allow create, update: if isOwner(uid)
-          && itemId.size() <= 64
-          && request.resource.data.keys().hasOnly(['iv', 'ct', 'updatedAt', 'deleted'])
-          && request.resource.data.iv is string && request.resource.data.iv.size() <= 32
-          && request.resource.data.ct is string && request.resource.data.ct.size() <= 40000
-          && request.resource.data.updatedAt is int
-          && request.resource.data.deleted is bool;
-      }
+    // Everything else is closed.
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

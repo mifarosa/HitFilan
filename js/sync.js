@@ -3,25 +3,16 @@
 // change up and merges changes from other devices back in ("newest wins").
 //
 // Firestore layout (rules in firestore.rules):
-//   hitfilan/{uid}/items/{docId}   { kind, data, updatedAt, deleted }
+//   users/{uid}/items/{docId}   { kind, data, updatedAt, deleted }
 // where docId is "settings", "h_<id>", "p_<id>" or "g_<id>" (see js/store.js).
 //
 // The Firebase SDK is only downloaded once the user turns backup on.
 import { localDocs, applyRemoteDoc } from './store.js';
 import { planMerge, toCloud, fromCloud } from './sync-core.js';
+import { firebaseConfig } from './firebase-config.js';
 
 const SDK = 'https://www.gstatic.com/firebasejs/12.19.0';
 
-// Shared with Ekünye's Firebase project; HitFilan data lives under its own
-// top-level collection. Public by design: access is enforced by sign-in and rules.
-const firebaseConfig = {
-  apiKey: 'AIzaSyBF2vCW59yE2SxRKSZjGTiRvVRYAx-T-40',
-  authDomain: 'ekunye-d7c7f.firebaseapp.com',
-  projectId: 'ekunye-d7c7f',
-  storageBucket: 'ekunye-d7c7f.firebasestorage.app',
-  messagingSenderId: '366785332924',
-  appId: '1:366785332924:web:eecd2121d13316af8cb2b9',
-};
 
 const ENABLED_KEY = 'hitfilan.sync';
 const PUSH_DELAY = 800;
@@ -89,7 +80,7 @@ async function loadSdk() {
 }
 
 function itemsRef() {
-  return fb.collection(db, 'hitfilan', user.uid, 'items');
+  return fb.collection(db, 'users', user.uid, 'items');
 }
 
 /* ---------- Merge and upload ---------- */
@@ -164,6 +155,11 @@ function errorText(err) {
 // Called once at startup; resumes sync if the user turned it on before.
 export function initSync(h) {
   hooks = { ...hooks, ...h };
+  // No Firebase project configured yet: keep the feature out of sight.
+  if (!firebaseConfig) {
+    setStatus({ state: 'unavailable' });
+    return;
+  }
   if (!isEnabled()) {
     setStatus({ state: 'off' });
     return;
