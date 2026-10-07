@@ -26,6 +26,11 @@
       <div id="home-goals"></div>
       <div id="week-summary" class="card week"></div>
 
+      <div class="section-head">
+        <h2 class="section-title">Planlarım</h2>
+      </div>
+      <div id="plan-list" class="program-list"></div>
+
       <h2 class="section-title">Kondisyon Bisikleti</h2>
       <div id="bike-list" class="program-list"></div>
 
@@ -57,6 +62,7 @@
         <button class="chip" data-filter="dumbbell">Dumbbell</button>
       </div>
       <div id="exercise-list" class="exercise-list"></div>
+      <p class="fineprint credit">Hareket fotoğrafları: <a href="https://github.com/yuhonas/free-exercise-db" target="_blank" rel="noopener">free-exercise-db</a> (kamu malı).</p>
     </section>
 
     <section id="view-history" class="view" aria-label="Takvim">
@@ -128,6 +134,16 @@
             <option value="1">1</option><option value="2">2</option><option value="3">3</option>
             <option value="4">4</option><option value="5">5</option><option value="6">6</option>
             <option value="7">7</option>
+          </select>
+        </label>
+        <label class="row">
+          <span>Ağırlık hareketleri<small>Dumbbell hareketleri tekrarla mı, süreyle mi?</small></span>
+          <select name="weightReps">
+            <option value="8">8 tekrar</option>
+            <option value="10">10 tekrar</option>
+            <option value="12">12 tekrar</option>
+            <option value="15">15 tekrar</option>
+            <option value="0">Süreli</option>
           </select>
         </label>
         <label class="row">
@@ -203,6 +219,29 @@
 
   <dialog id="program-sheet" class="sheet"></dialog>
 
+  <div id="editor" class="editor" hidden>
+    <header class="editor-head">
+      <button type="button" class="btn ghost" id="ed-cancel">Vazgeç</button>
+      <h2 id="ed-title">Yeni plan</h2>
+      <button type="button" class="btn primary" id="ed-save">Kaydet</button>
+    </header>
+    <div class="editor-body">
+      <input type="text" id="ed-name" class="ed-name" maxlength="40" placeholder="Plan adı (ör. Salı aralıkları)" aria-label="Plan adı">
+      <p class="ed-help">Planı bölümlerden kur. Her bölüm bir ya da birkaç adımdan oluşur ve istediğin kadar tur tekrar eder. Örnek: Isınma ×1 · Aralıklar ×10 (1 dk orta + 1 dk ağır) · Soğuma ×1.</p>
+      <div id="ed-sections"></div>
+      <button type="button" class="btn ghost full" id="ed-add-section">+ Bölüm ekle</button>
+    </div>
+    <footer class="editor-foot">
+      <div class="timeline" id="ed-timeline"></div>
+      <div class="editor-foot-row">
+        <span id="ed-summary" class="meta"></span>
+        <button type="button" class="btn primary" id="ed-start">Kaydet ve başla</button>
+      </div>
+    </footer>
+  </div>
+
+  <dialog id="step-picker" class="sheet"></dialog>
+
   <div id="runner" class="runner" hidden>
     <div class="runner-top">
       <button class="icon-btn" id="runner-close" aria-label="Antrenmanı bitir">
@@ -219,12 +258,14 @@
     <div class="runner-main">
       <div class="step-tag" id="step-tag"></div>
       <div class="step-label" id="step-label"></div>
+      <div class="runner-visual" id="ex-visual" hidden></div>
       <div class="ring">
         <svg viewBox="0 0 120 120" aria-hidden="true">
           <circle class="ring-bg" cx="60" cy="60" r="54"/>
           <circle class="ring-fg" id="ring-fg" cx="60" cy="60" r="54"/>
         </svg>
         <div class="ring-time" id="step-time">0:00</div>
+        <div class="ring-sub" id="step-sub"></div>
       </div>
       <div class="targets" id="targets" hidden></div>
       <p class="step-hint" id="step-hint"></p>
@@ -245,6 +286,7 @@
       <button class="play-btn" id="btn-play" aria-label="Başlat/Duraklat">
         <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg>
         <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h4v16H7zM14 4h4v16h-4z"/></svg>
+        <svg class="i-done" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg>
       </button>
       <button class="icon-btn" id="btn-next" aria-label="Sonraki">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 5v14M5 5l9 7-9 7z"/></svg>

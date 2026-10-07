@@ -716,3 +716,394 @@ details.ex .variant { color: var(--muted); font-size: 14px; margin-top: 6px; }
 .today-goals li b { font-variant-numeric: tabular-nums; }
 .today-goals li.ok b { color: var(--lvl-easy); }
 .today-goals h3 { margin: 0; font-size: 16px; }
+
+/* ---------- Runner in landscape: ring on the left, details on the right ---------- */
+
+@media (orientation: landscape) and (max-height: 600px) {
+  .runner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    grid-template-rows: auto auto minmax(0, 1fr) repeat(6, auto) minmax(0, 1fr);
+    grid-template-areas:
+      "top      top"
+      "line     line"
+      "ring     ."
+      "ring     tag"
+      "ring     label"
+      "ring     targets"
+      "ring     hint"
+      "ring     next"
+      "ring     controls"
+      "ring     .";
+    column-gap: clamp(24px, 5vw, 56px);
+    padding: calc(8px + var(--safe-t)) calc(24px + env(safe-area-inset-right, 0px)) calc(10px + var(--safe-b)) calc(24px + env(safe-area-inset-left, 0px));
+    overflow: hidden;
+  }
+  .runner-top { grid-area: top; }
+  /* The totals take the title's place in the top bar, freeing the right column */
+  .runner-title { visibility: hidden; }
+  .totals {
+    grid-area: top;
+    justify-self: center;
+    align-self: center;
+    display: flex;
+    gap: clamp(16px, 4vw, 40px);
+    margin: 0;
+    pointer-events: none;
+  }
+  .totals > div { display: flex; align-items: baseline; gap: 6px; }
+  .totals small { display: inline; font-size: 12px; }
+  .totals b { font-size: 17px; }
+
+  .runner .timeline { grid-area: line; margin-top: 8px; height: 10px; }
+  .runner-main { display: contents; }
+  .ring { grid-area: ring; align-self: center; justify-self: center; width: min(70vh, 42vw, 330px); }
+  .ring-time { font-size: clamp(48px, 13vh, 92px); }
+
+  .step-tag { grid-area: tag; text-align: left; }
+  .step-label { grid-area: label; text-align: left; margin: 4px 0 12px; font-size: clamp(24px, 4.4vw, 36px); line-height: 1.15; }
+  .targets { grid-area: targets; margin: 0; justify-content: flex-start; }
+  .targets b { font-size: 20px; }
+  /* Long tips don't fit beside the ring; the countdown's short action line does */
+  .step-hint { grid-area: hint; display: none; text-align: left; margin: 12px 0 0; min-height: auto; font-size: 15px; max-width: none; }
+  .runner.warning .step-hint { display: block; }
+  /* A quiet line instead of a box; hidden during the countdown, when the label already names it */
+  .next-step {
+    grid-area: next;
+    margin-top: 14px;
+    padding: 0;
+    border: 0;
+    background: none;
+    text-align: left;
+    font-size: 15px;
+    color: var(--muted);
+  }
+  .runner.warning .next-step { display: none; }
+  .controls { grid-area: controls; justify-content: flex-start; gap: 22px; margin-top: 20px; }
+  .controls .icon-btn { width: 46px; height: 46px; }
+  .play-btn { width: 60px; height: 60px; }
+  .play-btn svg { width: 26px; height: 26px; }
+}
+
+/* ---------- Plans ---------- */
+
+.new-plan {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-style: dashed;
+  background: transparent;
+}
+.new-plan-plus {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
+.new-plan b { display: block; font-size: 17px; }
+.new-plan small { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
+
+.plan-rows { list-style: none; margin: 0; padding: 0; }
+.plan-sec { padding: 8px 0; border-bottom: 1px solid var(--line); }
+.plan-sec:last-child { border-bottom: 0; }
+.plan-sec-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.plan-sec-head .badge { background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--accent); }
+.plan-items { list-style: none; margin: 0; padding: 0 0 0 4px; }
+.plan-items li { display: flex; align-items: center; gap: 10px; padding: 3px 0; font-size: 15px; }
+.plan-items li span:nth-child(2) { flex: 1; }
+.plan-items .when { color: var(--muted); font-variant-numeric: tabular-nums; }
+.sheet-actions { display: flex; gap: 8px; margin-top: 14px; }
+.sheet-actions .btn { flex: 1; padding: 10px; font-size: 15px; }
+#sheet-copy { margin-top: 16px; font-size: 15px; }
+
+/* ---------- Plan editor (full screen) ---------- */
+
+body.editing { overflow: hidden; }
+.editor {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+.editor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: calc(10px + var(--safe-t)) 16px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.editor-head h2 { margin: 0; font-size: 18px; }
+.editor-head .btn { padding: 8px 14px; font-size: 15px; }
+.editor-head .btn:disabled, .editor-foot .btn:disabled { opacity: .4; }
+.editor-body { flex: 1; overflow-y: auto; padding: 14px 16px 24px; max-width: 640px; width: 100%; margin: 0 auto; }
+.ed-name {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 19px;
+  font-weight: 700;
+}
+.ed-help { color: var(--muted); font-size: 13px; margin: 8px 2px 14px; }
+
+.ed-sec {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.ed-sec-head { display: flex; gap: 8px; align-items: center; }
+.ed-sec-name {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+}
+.ed-tools { display: flex; gap: 4px; flex: none; }
+.mini {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--surface-2);
+  font-size: 15px;
+  line-height: 1;
+}
+.mini:disabled { opacity: .3; }
+.mini.danger { color: var(--danger); }
+
+.ed-repeat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin: 10px 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.ed-repeat small { flex-basis: 100%; color: var(--muted); font-weight: 400; font-size: 12px; }
+.ed-repeat .stepper-ctrl { margin: 0; }
+
+.ed-items { list-style: none; margin: 8px 0; padding: 0; }
+.ed-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas: "dot name tools" "dot dur dur";
+  align-items: center;
+  gap: 6px 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+.ed-thumb { grid-area: dot; align-self: start; position: relative; display: block; width: 56px; }
+.ed-thumb .ex-visual.thumb { width: 56px; }
+.ed-thumb .ed-bar { display: block; height: 4px; border-radius: 2px; margin-top: 4px; }
+.ed-thumb:not(:has(.ex-visual)) .ed-bar { width: 10px; height: 10px; border-radius: 50%; margin: 6px 0 0; }
+.ed-item-name { grid-area: name; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.ed-item .ed-tools { grid-area: tools; }
+.ed-dur { grid-area: dur; display: flex; align-items: center; gap: 6px; }
+.ed-dur button {
+  height: 34px;
+  min-width: 38px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--surface-2);
+  font-size: 18px;
+  font-weight: 700;
+}
+.ed-dur .ed-dur-val { min-width: 76px; font-size: 16px; font-variant-numeric: tabular-nums; }
+.ed-add { margin: 4px 0 0; padding: 10px; font-size: 15px; }
+
+.editor-foot {
+  border-top: 1px solid var(--line);
+  padding: 10px 16px calc(10px + var(--safe-b));
+  background: var(--surface);
+}
+.editor-foot .timeline { height: 8px; margin: 0 auto 8px; max-width: 640px; }
+.editor-foot-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; max-width: 640px; margin: 0 auto; }
+.editor-foot .btn { padding: 10px 16px; font-size: 15px; }
+
+/* Step picker */
+.sheet .pick-row { display: flex; gap: 8px; }
+.pick-bike {
+  flex: 1;
+  padding: 12px 8px;
+  border-radius: 12px;
+  border: 2px solid var(--c);
+  background: color-mix(in srgb, var(--c) 18%, var(--surface));
+  font-weight: 700;
+  font-size: 16px;
+}
+.pick-bike small { display: block; font-weight: 400; font-size: 12px; color: var(--muted); margin-top: 2px; }
+.pick-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.pick-ex {
+  text-align: left;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  font-weight: 600;
+  font-size: 14px;
+}
+.pick-ex small { display: block; color: var(--muted); font-weight: 400; font-size: 12px; margin-top: 2px; }
+.pick-custom input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  margin-bottom: 8px;
+}
+.pick-custom .chips { margin: 0 0 10px; }
+
+
+/* ---------- Exercise photos ---------- */
+
+.ex-visual {
+  position: relative;
+  aspect-ratio: 3 / 2;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  flex: none;
+}
+.ex-visual img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* Start and end photos alternate, so the move plays like a flip book */
+.ex-visual.anim img + img { animation: ex-play 2.4s ease-in-out infinite; }
+@keyframes ex-play {
+  0%, 38% { opacity: 0; }
+  50%, 88% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.ex-visual.thumb { width: 72px; border-radius: 8px; }
+.ex-visual.full { width: 100%; margin: 10px 0 4px; }
+.ex-visual.none { display: grid; place-items: center; background: var(--surface-2); }
+.ex-ph { width: 50%; height: 50%; stroke: var(--muted); stroke-width: 2.5; }
+.ex-ph circle { fill: none; }
+@media (prefers-reduced-motion: reduce) {
+  .ex-visual.anim img + img { animation: none; }
+}
+
+/* Library cards */
+details.ex.lib summary { flex-wrap: nowrap; gap: 12px; }
+.lib-text { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; }
+.lib-text .lib-name { font-weight: 600; }
+.lib-text small { width: 100%; color: var(--muted); font-weight: 400; font-size: 13px; }
+.lib-visual:empty { display: none; }
+.credit a { color: var(--muted); }
+
+/* Step picker cards */
+.pick-tabs { margin: 14px 0 12px; flex-wrap: wrap; overflow: visible; }
+.pick-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  text-align: left;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.pick-card .ex-visual.thumb { width: 100%; }
+.pick-card-text { padding: 0 4px 4px; }
+.pick-card-text b { display: block; font-size: 14px; }
+.pick-card-text small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+#pick-body > .ex-visual.full { margin-top: 0; max-height: 200px; }
+#pick-body .pick-row { margin-top: 10px; }
+
+/* Runner photo */
+.runner-visual { width: min(80vw, 22vh * 1.5, 340px); margin: 2px 0 10px; }
+/* Never let a tall step overlap or squeeze the bars around it; scroll instead */
+.runner-main { justify-content: safe center; min-height: auto; }
+.runner > :not(.runner-main) { flex-shrink: 0; }
+/* The photo shows the move, so the long how-to text can go */
+.runner.has-visual .step-hint { display: none; }
+.runner.has-visual.warning .step-hint { display: block; min-height: 0; margin-top: 8px; }
+/* During the countdown the big label already names the next step */
+.runner.has-visual.warning .next-step { display: none; }
+@media (orientation: portrait) and (max-height: 720px) {
+  .runner-visual { width: min(80vw, 19vh * 1.5, 340px); }
+  .runner.has-visual .ring { width: min(50vw, 21vh, 200px); }
+  .runner.has-visual .step-label { font-size: 24px; margin-bottom: 8px; }
+  .runner.has-visual .totals { margin: 8px 0; }
+  .runner.has-visual .totals b { font-size: 18px; }
+  .runner.has-visual .play-btn { width: 64px; height: 64px; }
+  .runner.has-visual .controls .icon-btn { width: 48px; height: 48px; }
+}
+.runner-visual .ex-visual.full { margin: 0; border-radius: 16px; box-shadow: 0 0 0 3px color-mix(in srgb, var(--lvl) 70%, transparent); }
+.runner.has-visual .ring { width: min(56vw, 25vh, 240px); }
+.runner.has-visual .ring-time { font-size: clamp(44px, 12vw, 72px); }
+
+@media (orientation: landscape) and (max-height: 600px) {
+  .runner-visual { grid-area: targets; width: auto; max-width: 100%; margin: 0; }
+  .runner-visual .ex-visual.full { width: auto; height: min(30vh, 140px); aspect-ratio: 3 / 2; }
+  .runner.has-visual .step-label { margin-bottom: 10px; }
+  /* With a photo there's no room for the "next" line; the countdown shows the next move anyway */
+  .runner.has-visual .next-step { display: none; }
+  .runner.has-visual.warning .step-hint { display: none; }
+  .runner.has-visual .ring { width: min(68vh, 40vw, 320px); }
+  .runner.has-visual .ring-time { font-size: clamp(48px, 13vh, 92px); }
+}
+
+/* ---------- Rep-based sets (no timer) ---------- */
+
+.ring-sub {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 66%;
+  text-align: center;
+  font-size: clamp(13px, 3.4vw, 17px);
+  font-weight: 600;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.ring-sub:empty { display: none; }
+.runner.open-step .ring-time { padding-bottom: .18em; }
+/* The big button becomes "done" */
+.play-btn .i-done { display: none; }
+.runner.open-step:not(.paused) .play-btn { background: var(--lvl-easy); color: #08130e; }
+.runner.open-step:not(.paused) .play-btn .i-play,
+.runner.open-step:not(.paused) .play-btn .i-pause { display: none; }
+.runner.open-step:not(.paused) .play-btn .i-done { display: block; fill: none; stroke: currentColor; stroke-width: 3.2; }
+.runner.open-step:not(.paused) .play-btn { animation: done-pulse 2s ease-in-out infinite; }
+@keyframes done-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--lvl-easy) 50%, transparent); }
+  50% { box-shadow: 0 0 0 12px color-mix(in srgb, var(--lvl-easy) 0%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .runner.open-step .play-btn { animation: none; }
+}
+
+/* Reps / seconds switch on plan steps */
+.ed-dur { flex-wrap: wrap; }
+.ed-mode { display: inline-flex; margin-left: 4px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); }
+.ed-mode button { min-width: 0; height: 34px; padding: 0 10px; border-radius: 0; background: transparent; font-size: 13px; font-weight: 600; color: var(--muted); }
+.ed-mode button.active { background: var(--text); color: var(--bg); }
+.reps-note { margin-top: 10px; }

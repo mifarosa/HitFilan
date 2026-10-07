@@ -9,6 +9,7 @@ export const DEFAULT_SETTINGS = {
   dumbbellKg: 7.5,
   bikeId: 'bike40', // selected bike flow duration
   warnSeconds: 10, // heads-up before each change
+  weightReps: 12, // dumbbell moves in circuits: reps per set (0 = timed)
   weeklyGoal: 3, // workouts per week that keep the streak going
   resEasy: 2, // resistance knob levels on the user's bike
   resModerate: 5,
@@ -83,6 +84,18 @@ export function loadGoals() {
 
 export function saveGoals(goals) {
   write(GOALS_KEY, goals);
+}
+
+// User-built workout plans (see js/plans.js for the shape).
+const PLANS_KEY = 'hitfilan.plans';
+
+export function loadPlans() {
+  const list = read(PLANS_KEY, []);
+  return Array.isArray(list) ? list : [];
+}
+
+export function savePlans(plans) {
+  write(PLANS_KEY, plans);
 }
 
 export function removeHistory(id) {
