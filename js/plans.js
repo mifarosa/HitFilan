@@ -23,7 +23,7 @@ const BIKE_NAMES = { easy: 'Boşta', moderate: 'Orta', hard: 'Ağır' };
 const MAX_REPEAT = 50;
 
 let hooks = {
-  onChange() {}, onStart() {}, weightKg: () => 75, resistance: () => '',
+  onChange() {}, onStart() {}, weightKg: () => 75, resistance: () => '', defaultReps: () => 12,
 };
 let draft = null; // plan being edited
 let pickerSection = -1;
@@ -82,7 +82,9 @@ export function planFromProgram(program, opts = {}) {
     const rest = opts.rest ?? program.rest;
     const items = [];
     program.exercises.forEach((id, i) => {
-      items.push({ type: 'exercise', exercise: id, dur: work });
+      const item = { type: 'exercise', exercise: id, dur: work };
+      if (opts.weightReps && EXERCISES[id].equip === 'dumbbell') item.reps = opts.weightReps;
+      items.push(item);
       const last = i === program.exercises.length - 1;
       if (last && program.roundRest) items.push({ type: 'rest', name: 'Tur arası', dur: program.roundRest });
       else if (!last && rest) items.push({ type: 'rest', dur: rest });
@@ -108,6 +110,25 @@ function itemName(item) {
   return item.name;
 }
 
+// Exercises can be counted in reps (done by hand) or seconds (timed).
+function amountControlHTML(it) {
+  const mode = it.type === 'exercise' ? `
+    <div class="ed-mode" role="group" aria-label="Ölçü">
+      <button type="button" class="${it.reps ? 'active' : ''}" data-mode="reps">Tekrar</button>
+      <button type="button" class="${it.reps ? '' : 'active'}" data-mode="time">Süre</button>
+    </div>` : '';
+  const value = it.reps
+    ? `<button type="button" class="ed-dur-val" data-dur-edit aria-label="Tekrar sayısını yaz">${it.reps} tekrar</button>`
+    : `<button type="button" class="ed-dur-val" data-dur-edit aria-label="Süreyi yaz">${formatTime(it.dur)}</button>`;
+  return `
+    <div class="ed-dur">
+      <button type="button" data-dur="-1" aria-label="Azalt">−</button>
+      ${value}
+      <button type="button" data-dur="1" aria-label="Artır">+</button>
+      ${mode}
+    </div>`;
+}
+
 function itemThumb(item) {
   const id = item.type === 'exercise' ? item.exercise : item.type === 'bike' ? 'bike' : null;
   const bar = `<i class="ed-bar" style="background:${LEVELS[itemLevel(item)].color}"></i>`;
@@ -128,7 +149,7 @@ export function planRowsHTML(plan) {
       <div class="plan-sec-head"><b>${esc(s.name || 'Bölüm')}</b>${s.repeat > 1 ? `<span class="badge">${s.repeat} tur</span>` : ''}</div>
       <ul class="plan-items">${s.items.map((it) => `
         <li><span class="dot" style="background:${LEVELS[itemLevel(it)].color}"></span>
-          <span>${esc(itemName(it))}</span><span class="when">${formatTime(it.dur)}</span></li>`).join('')}
+          <span>${esc(itemName(it))}</span><span class="when">${it.reps ? `${it.reps} tekrar` : formatTime(it.dur)}</span></li>`).join('')}
       </ul>
     </li>`).join('');
 }
@@ -217,11 +238,7 @@ function sectionHTML(s, si) {
         <li class="ed-item" data-ii="${ii}">
           ${itemThumb(it)}
           <span class="ed-item-name">${esc(itemName(it))}</span>
-          <div class="ed-dur">
-            <button type="button" data-dur="-1" aria-label="Süreyi azalt">−</button>
-            <button type="button" class="ed-dur-val" data-dur-edit aria-label="Süreyi yaz">${formatTime(it.dur)}</button>
-            <button type="button" data-dur="1" aria-label="Süreyi artır">+</button>
-          </div>
+          ${amountControlHTML(it)}
           <div class="ed-tools">
             <button type="button" class="mini" data-item-act="up" ${ii === 0 ? 'disabled' : ''} aria-label="Yukarı taşı">↑</button>
             <button type="button" class="mini" data-item-act="down" ${ii === s.items.length - 1 ? 'disabled' : ''} aria-label="Aşağı taşı">↓</button>
@@ -275,10 +292,28 @@ function bindEditor() {
       const item = sec.items[ii];
       $$('[data-dur]', row).forEach((b) => b.addEventListener('click', () => {
         const dir = +b.dataset.dur;
-        item.dur = Math.min(3600, Math.max(5, item.dur + dir * durStep(item.dur, dir)));
+        if (item.reps) item.reps = Math.min(100, Math.max(1, item.reps + dir));
+        else item.dur = Math.min(3600, Math.max(5, item.dur + dir * durStep(item.dur, dir)));
+        renderEditor();
+      }));
+      $$('[data-mode]', row).forEach((b) => b.addEventListener('click', () => {
+        if (b.dataset.mode === 'reps') item.reps = item.reps || hooks.defaultReps() || 12;
+        else delete item.reps;
         renderEditor();
       }));
       $('[data-dur-edit]', row).addEventListener('click', () => {
+        if (item.reps) {
+          const raw = prompt('Kaç tekrar?', String(item.reps));
+          if (raw === null) return;
+          const n = parseInt(raw, 10);
+          if (!Number.isFinite(n) || n < 1 || n > 100) {
+            alert('Tekrar sayısı 1 ile 100 arasında olmalı.');
+            return;
+          }
+          item.reps = n;
+          renderEditor();
+          return;
+        }
         const raw = prompt('Süre (ör. 45, 1:30 ya da 5 dk):', formatTime(item.dur));
         if (raw === null) return;
         const secs = parseDuration(raw);
@@ -381,7 +416,12 @@ function openPicker(si) {
     body.innerHTML = pickTabHTML(tab);
     $$('[data-bike]', body).forEach((b) => b.addEventListener('click', () => add({ type: 'bike', level: b.dataset.bike, dur: DEFAULT_DUR.bike })));
     $('[data-rest]', body)?.addEventListener('click', () => add({ type: 'rest', dur: DEFAULT_DUR.rest }));
-    $$('[data-ex]', body).forEach((b) => b.addEventListener('click', () => add({ type: 'exercise', exercise: b.dataset.ex, dur: DEFAULT_DUR.exercise })));
+    // Weight moves default to reps (done by hand); bodyweight moves to seconds.
+    $$('[data-ex]', body).forEach((b) => b.addEventListener('click', () => {
+      const item = { type: 'exercise', exercise: b.dataset.ex, dur: DEFAULT_DUR.exercise };
+      if (EXERCISES[b.dataset.ex].equip === 'dumbbell') item.reps = hooks.defaultReps() || 12;
+      add(item);
+    }));
     let kind = 'work';
     $$('[data-kind]', body).forEach((c) => c.addEventListener('click', () => {
       kind = c.dataset.kind;

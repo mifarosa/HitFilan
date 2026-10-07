@@ -14,6 +14,24 @@ function bikeSteps(program) {
   }));
 }
 
+// Rep-based sets have no timer: the user moves on when done. Their duration is
+// only an estimate (about 3 s per rep) for totals and calorie numbers.
+export const SECONDS_PER_REP = 3;
+
+function repStep(id, reps, tag) {
+  const ex = EXERCISES[id];
+  return {
+    label: ex.name,
+    level: 'work',
+    tag,
+    hint: ex.how,
+    exercise: id,
+    reps,
+    open: true,
+    dur: reps * SECONDS_PER_REP,
+  };
+}
+
 function circuitSteps(program, opts = {}) {
   const work = opts.work ?? program.work;
   const rest = opts.rest ?? program.rest;
@@ -21,17 +39,24 @@ function circuitSteps(program, opts = {}) {
   const steps = [];
   const list = program.exercises;
 
+  // Weight moves can be counted in reps instead of seconds (opts.weightReps).
+  const weightReps = opts.weightReps || 0;
   for (let r = 1; r <= rounds; r++) {
     list.forEach((id, i) => {
       const ex = EXERCISES[id];
-      steps.push({
-        label: ex.name,
-        level: 'work',
-        tag: rounds > 1 ? `Tur ${r}/${rounds} · ${i + 1}/${list.length}` : `${i + 1}/${list.length}`,
-        hint: ex.how,
-        exercise: id,
-        dur: work,
-      });
+      const tag = rounds > 1 ? `Tur ${r}/${rounds} · ${i + 1}/${list.length}` : `${i + 1}/${list.length}`;
+      if (weightReps && ex.equip === 'dumbbell') {
+        steps.push(repStep(id, weightReps, tag));
+      } else {
+        steps.push({
+          label: ex.name,
+          level: 'work',
+          tag,
+          hint: ex.how,
+          exercise: id,
+          dur: work,
+        });
+      }
       const isLastInRound = i === list.length - 1;
       const isLastOverall = isLastInRound && r === rounds;
       if (isLastOverall) return;
@@ -77,6 +102,7 @@ function planItemStep(item, section) {
     };
   }
   if (item.type === 'exercise') {
+    if (item.reps) return repStep(item.exercise, item.reps, `${item.reps} tekrar`);
     const ex = EXERCISES[item.exercise];
     return { label: ex.name, level: 'work', tag: 'Çalış', hint: ex.how, exercise: item.exercise, dur: item.dur };
   }

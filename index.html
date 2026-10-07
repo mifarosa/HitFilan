@@ -137,6 +137,16 @@
           </select>
         </label>
         <label class="row">
+          <span>Ağırlık hareketleri<small>Dumbbell hareketleri tekrarla mı, süreyle mi?</small></span>
+          <select name="weightReps">
+            <option value="8">8 tekrar</option>
+            <option value="10">10 tekrar</option>
+            <option value="12">12 tekrar</option>
+            <option value="15">15 tekrar</option>
+            <option value="0">Süreli</option>
+          </select>
+        </label>
+        <label class="row">
           <span>Geri sayım uyarısı<small>Her geçişten kaç saniye önce haber versin</small></span>
           <select name="warnSeconds">
             <option value="5">5 sn</option>
@@ -255,6 +265,7 @@
           <circle class="ring-fg" id="ring-fg" cx="60" cy="60" r="54"/>
         </svg>
         <div class="ring-time" id="step-time">0:00</div>
+        <div class="ring-sub" id="step-sub"></div>
       </div>
       <div class="targets" id="targets" hidden></div>
       <p class="step-hint" id="step-hint"></p>
@@ -275,6 +286,7 @@
       <button class="play-btn" id="btn-play" aria-label="Başlat/Duraklat">
         <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg>
         <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h4v16H7zM14 4h4v16h-4z"/></svg>
+        <svg class="i-done" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg>
       </button>
       <button class="icon-btn" id="btn-next" aria-label="Sonraki">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 5v14M5 5l9 7-9 7z"/></svg>

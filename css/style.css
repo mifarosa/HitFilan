@@ -1070,3 +1070,40 @@ details.ex.lib summary { flex-wrap: nowrap; gap: 12px; }
   .runner.has-visual .ring { width: min(68vh, 40vw, 320px); }
   .runner.has-visual .ring-time { font-size: clamp(48px, 13vh, 92px); }
 }
+
+/* ---------- Rep-based sets (no timer) ---------- */
+
+.ring-sub {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 66%;
+  text-align: center;
+  font-size: clamp(13px, 3.4vw, 17px);
+  font-weight: 600;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.ring-sub:empty { display: none; }
+.runner.open-step .ring-time { padding-bottom: .18em; }
+/* The big button becomes "done" */
+.play-btn .i-done { display: none; }
+.runner.open-step:not(.paused) .play-btn { background: var(--lvl-easy); color: #08130e; }
+.runner.open-step:not(.paused) .play-btn .i-play,
+.runner.open-step:not(.paused) .play-btn .i-pause { display: none; }
+.runner.open-step:not(.paused) .play-btn .i-done { display: block; fill: none; stroke: currentColor; stroke-width: 3.2; }
+.runner.open-step:not(.paused) .play-btn { animation: done-pulse 2s ease-in-out infinite; }
+@keyframes done-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--lvl-easy) 50%, transparent); }
+  50% { box-shadow: 0 0 0 12px color-mix(in srgb, var(--lvl-easy) 0%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .runner.open-step .play-btn { animation: none; }
+}
+
+/* Reps / seconds switch on plan steps */
+.ed-dur { flex-wrap: wrap; }
+.ed-mode { display: inline-flex; margin-left: 4px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); }
+.ed-mode button { min-width: 0; height: 34px; padding: 0 10px; border-radius: 0; background: transparent; font-size: 13px; font-weight: 600; color: var(--muted); }
+.ed-mode button.active { background: var(--text); color: var(--bg); }
+.reps-note { margin-top: 10px; }

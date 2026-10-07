@@ -71,8 +71,10 @@ function minutesLabel(sec) {
 }
 
 function defaultOpts(program) {
-  if (program.kind === 'circuit') return { work: program.work, rest: program.rest, rounds: program.rounds };
-  if (program.kind === 'combo') return { bikeId: settings.bikeId };
+  if (program.kind === 'circuit') {
+    return { work: program.work, rest: program.rest, rounds: program.rounds, weightReps: settings.weightReps };
+  }
+  if (program.kind === 'combo') return { bikeId: settings.bikeId, weightReps: settings.weightReps };
   return {};
 }
 
@@ -263,6 +265,9 @@ function openSheet(programId) {
         ${stepper('rest', 'Dinlen', opts.rest, 0, 60, 5, 'sn')}
         ${stepper('rounds', 'Tur', opts.rounds, 1, 6, 1, '')}
       </div>
+      ${settings.weightReps && p.exercises.some((id) => EXERCISES[id].equip === 'dumbbell')
+    ? `<p class="meta reps-note">Dumbbell hareketleri <b>${settings.weightReps} tekrar</b>: süre yok, bitince ✓ tuşuyla geçersin. Ayarlar’dan değiştirebilirsin.</p>`
+    : ''}
       <h4>Hareketler <small>(dokun: nasıl yapılır)</small></h4>
       ${p.exercises.map(exerciseDetails).join('')}`;
   } else {
@@ -683,13 +688,20 @@ function warnAction(step, next) {
     const verb = to.res > from.res ? 'Direnci artır' : to.res < from.res ? 'Direnci azalt' : 'Direnç aynı';
     return `${verb} → ${to.res} · ${to.rpm} rpm`;
   }
+  if (next.open) return `Hazırlan: ${next.reps} tekrar, bitince ✓ tuşuna bas.`;
   if (next.level === 'work') return next.exercise ? 'Hazırlan, pozisyonunu al.' : `Hazırlan: ${next.hint || next.label}`;
   if (next.level === 'rest') return 'Son saniyeler, bırakma!';
   return next.hint || '';
 }
 
 function warnDue(step, next, remaining) {
-  return !!next && step.dur > settings.warnSeconds && remaining <= settings.warnSeconds;
+  // Rep-based sets have no countdown; they end when the user taps done.
+  return !!next && !step.open && step.dur > settings.warnSeconds && remaining <= settings.warnSeconds;
+}
+
+// "12 tekrar" for rep-based steps, otherwise the step's time.
+function stepAmount(step) {
+  return step.open ? `${step.reps} tekrar` : formatTime(step.dur);
 }
 
 function announce(step, prev) {
@@ -706,7 +718,8 @@ function announce(step, prev) {
     else if (step.level === 'rest') {
       const next = run.steps[run.steps.indexOf(step) + 1];
       text = next ? `Dinlen. Sıradaki: ${next.label}` : 'Dinlen.';
-    } else if (step.level === 'work') text = `${step.label}. ${step.dur} saniye.`;
+    } else if (step.open) text = `${step.label}. ${step.reps} tekrar. Bitince dokun.`;
+    else if (step.level === 'work') text = `${step.label}. ${step.dur} saniye.`;
     else if (step.dur >= 120) text = `${step.label}. ${Math.round(step.dur / 60)} dakika.`;
     setTimeout(() => speak(text), 500);
   }
@@ -742,6 +755,8 @@ function renderVisual(step) {
 function renderStep(step, index) {
   warnActive = false;
   runner.classList.remove('warning');
+  runner.classList.toggle('open-step', !!step.open);
+  $('#btn-play').setAttribute('aria-label', step.open ? 'Seti tamamladım' : 'Başlat/Duraklat');
   renderVisual(step);
   runner.dataset.level = step.level;
   $('#step-tag').textContent = step.tag;
@@ -758,7 +773,7 @@ function renderStep(step, index) {
   const lvl = next.label.includes(lvlLabel)
     ? ''
     : ` <span class="lvl" style="color:${LEVELS[next.level].color}">${esc(lvlLabel)}</span>`;
-  $('#next-step').innerHTML = `Sıradaki: <b>${esc(next.label)}</b>${lvl} · ${formatTime(next.dur)}`;
+  $('#next-step').innerHTML = `Sıradaki: <b>${esc(next.label)}</b>${lvl} · ${stepAmount(next)}`;
 }
 
 // Countdown mode: the screen switches to the colour and name of the next step.
@@ -781,8 +796,17 @@ function renderTick(t) {
   else if (!warn && warnActive) renderStep(step, t.index);
   if (warn) $('#step-tag').textContent = `${Math.ceil(remaining)} sn sonra`;
 
-  $('#step-time').textContent = formatTime(remaining);
-  ringFg.style.strokeDashoffset = RING_LEN * (1 - remaining / step.dur);
+  if (step.open) {
+    // Rep-based set: show the target reps and the time spent so far.
+    $('#step-time').textContent = step.reps;
+    const ex = EXERCISES[step.exercise];
+    $('#step-sub').textContent = `tekrar${ex?.sides ? ' · her taraf' : ''} · ${formatTime(t.stepElapsed() / 1000)}`;
+    ringFg.style.strokeDashoffset = 0;
+  } else {
+    $('#step-time').textContent = formatTime(remaining);
+    $('#step-sub').textContent = '';
+    ringFg.style.strokeDashoffset = RING_LEN * (1 - remaining / step.dur);
+  }
   const elapsed = t.totalElapsed();
   $('#t-elapsed').textContent = formatTime(elapsed);
   $('#t-remaining').textContent = formatTime(run.total - elapsed);
@@ -827,7 +851,8 @@ function historyEntry(programId, name, startedAt, steps, elapsed, completed) {
 
 function saveRun(completed) {
   if (run.saved) return;
-  const elapsed = completed ? run.total : timer.totalElapsed();
+  // Actual time: rep-based sets take as long as they take.
+  const elapsed = timer.totalElapsed();
   if (elapsed < 60) return; // ignore accidental starts
   run.saved = true;
   const entry = historyEntry(run.programId, run.name, run.startedAt, run.steps, elapsed, completed);
@@ -898,7 +923,7 @@ function startRunner(programId, opts, resume = null) {
       if (!muted && settings.voice) setTimeout(() => speak('Antrenman tamamlandı. Harika iş!'), 900);
       saveRun(true);
       clearActive();
-      $('#finish-text').textContent = `${run.name} bitti. ${formatTime(run.total)} · ~${estimateKcal(run.steps, settings.weightKg)} kcal`;
+      $('#finish-text').textContent = `${run.name} bitti. ${formatTime(t.totalElapsed())} · ~${estimateKcal(run.steps, settings.weightKg, t.totalElapsed())} kcal`;
       $$('#rate-opts button').forEach((b) => b.classList.remove('active'));
       $('#rate-tip').textContent = '';
       $('#finish').hidden = false;
@@ -933,6 +958,12 @@ function closeRunner() {
 
 $('#btn-play').addEventListener('click', () => {
   unlockAudio();
+  // On a rep-based set the big button means "done": go to the next step.
+  if (timer?.current.open && timer.running) {
+    timer.next();
+    persistActive();
+    return;
+  }
   timer?.toggle();
   if (timer?.running) acquireWakeLock();
   persistActive();
@@ -1056,6 +1087,7 @@ initPlans({
   onStart: (id) => startRunner(id, {}),
   weightKg: () => settings.weightKg,
   resistance: (level) => bikeTarget(level)?.res ?? '',
+  defaultReps: () => settings.weightReps,
 });
 renderHomeGoals();
 
