@@ -141,13 +141,21 @@ window.addEventListener('hitfilan:changed', (e) => {
   }, PUSH_DELAY);
 });
 
+// User-facing text; the raw code is appended so a screenshot is enough to diagnose.
 function errorText(err) {
-  const code = err?.code || '';
-  if (code === 'permission-denied') return 'Bulut erişim izni yok (Firestore kuralları güncellenmeli).';
-  if (code === 'auth/popup-blocked') return 'Giriş penceresi engellendi. Tarayıcıda açılır pencerelere izin ver.';
-  if (code === 'auth/unauthorized-domain') return 'Bu adres Firebase’de yetkili değil (Authorized domains).';
-  if (code === 'auth/network-request-failed' || code === 'unavailable') return 'İnternet bağlantısı yok. Bağlanınca devam eder.';
-  return 'Eşitleme sırasında bir sorun oldu.';
+  const code = err?.code || err?.name || 'bilinmiyor';
+  const known = {
+    'permission-denied': 'Bulut erişim izni yok: Firestore kuralları yayınlanmamış olabilir.',
+    'not-found': 'Firestore veritabanı bulunamadı.',
+    'failed-precondition': 'Firestore veritabanı hazır değil.',
+    'auth/popup-blocked': 'Giriş penceresi engellendi. Tarayıcıda açılır pencerelere izin ver.',
+    'auth/unauthorized-domain': 'Bu adres Firebase’de yetkili değil (Authorized domains).',
+    'auth/operation-not-allowed': 'Firebase’de Google ile giriş açık değil.',
+    'auth/network-request-failed': 'İnternet bağlantısı yok. Bağlanınca devam eder.',
+    unavailable: 'İnternet bağlantısı yok. Bağlanınca devam eder.',
+  };
+  const text = known[code] || 'Eşitleme sırasında bir sorun oldu.';
+  return `${text} (kod: ${code})`;
 }
 
 /* ---------- Public API ---------- */
@@ -179,7 +187,10 @@ export async function signIn() {
     const provider = new fb.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     try {
-      await fb.signInWithPopup(auth, provider);
+      const cred = await fb.signInWithPopup(auth, provider);
+      // Same account as before: the auth listener stays quiet, so attach here.
+      user = cred.user;
+      attach();
     } catch (err) {
       // No popups at all (some in-app browsers and installed apps): use a redirect.
       if (err?.code === 'auth/operation-not-supported-in-this-environment') {
@@ -198,6 +209,22 @@ export async function signIn() {
     console.error(err);
     setStatus({ state: 'error', message: errorText(err) });
   }
+}
+
+// "Try again" from the error card: if already signed in, just re-open the
+// cloud listener (a dead listener is not restarted by signing in again, since
+// the auth state doesn't change).
+export async function retrySync() {
+  if (user && db) {
+    attach();
+    return;
+  }
+  if (auth && auth.currentUser) {
+    user = auth.currentUser;
+    attach();
+    return;
+  }
+  await signIn();
 }
 
 // Stops syncing on this device; local data stays, the cloud copy stays too.

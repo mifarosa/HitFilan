@@ -4,7 +4,7 @@ import {
 } from './steps.js';
 import { SequenceTimer } from './timer.js';
 import { visualHTML } from './visual.js';
-import { initSync, signIn, signOut } from './sync.js';
+import { initSync, signIn, signOut, retrySync } from './sync.js';
 import { renderGoals, initGoals, todayGoalsHTML } from './goals.js';
 import {
   initPlans, openEditor, deletePlan, duplicatePlan, planFromProgram, planRowsHTML,
@@ -816,6 +816,14 @@ function renderTick(t) {
   runner.classList.toggle('paused', !t.running);
 }
 
+// Wall clock on the runner; ticks on its own so it stays right while paused.
+const clockFmt = new Intl.DateTimeFormat('tr-TR', { hour: '2-digit', minute: '2-digit' });
+function tickClock() {
+  $('#t-clock').textContent = clockFmt.format(new Date());
+}
+tickClock();
+setInterval(tickClock, 5000);
+
 function pulseTime() {
   const el = $('#step-time');
   el.classList.remove('pop');
@@ -1118,12 +1126,13 @@ function renderSync(st) {
     error: `
       <h3>Bulut yedeği</h3>
       <p class="meta sync-err">${esc(st.message || 'Bir sorun oldu.')}</p>
-      <button type="button" class="btn primary full" data-sync="in">Tekrar dene</button>
+      <button type="button" class="btn primary full" data-sync="retry">Tekrar dene</button>
       <button type="button" class="btn ghost full" data-sync="out">Yedeği kapat</button>`,
   };
   card.innerHTML = views[st.state] || views.off;
   card.dataset.state = st.state;
   $('[data-sync="in"]', card)?.addEventListener('click', () => signIn());
+  $('[data-sync="retry"]', card)?.addEventListener('click', () => retrySync());
   $('[data-sync="out"]', card)?.addEventListener('click', () => {
     if (confirm('Bu cihazda bulut yedeği kapatılsın mı? Buluttaki ve telefondaki verilerin silinmez.')) signOut();
   });
