@@ -419,7 +419,7 @@ details.ex .variant { color: var(--muted); font-size: 14px; margin-top: 6px; }
 }
 .next-step .lvl { font-weight: 600; }
 
-.totals { display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; margin: 14px 0; }
+.totals { display: grid; grid-template-columns: repeat(4, 1fr); text-align: center; margin: 14px 0; }
 .totals small { display: block; color: var(--muted); font-size: 12px; }
 .totals b { font-size: 20px; font-variant-numeric: tabular-nums; }
 

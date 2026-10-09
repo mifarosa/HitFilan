@@ -816,6 +816,14 @@ function renderTick(t) {
   runner.classList.toggle('paused', !t.running);
 }
 
+// Wall clock on the runner; ticks on its own so it stays right while paused.
+const clockFmt = new Intl.DateTimeFormat('tr-TR', { hour: '2-digit', minute: '2-digit' });
+function tickClock() {
+  $('#t-clock').textContent = clockFmt.format(new Date());
+}
+tickClock();
+setInterval(tickClock, 5000);
+
 function pulseTime() {
   const el = $('#step-time');
   el.classList.remove('pop');
