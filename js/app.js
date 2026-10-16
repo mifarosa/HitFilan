@@ -6,6 +6,8 @@ import { SequenceTimer } from './timer.js';
 import { visualHTML } from './visual.js';
 import { initSync, signIn, signOut, retrySync } from './sync.js';
 import { renderGoals, initGoals, todayGoalsHTML } from './goals.js';
+import { renderNutrition, initNutrition, todayKcalHTML } from './nutrition.js';
+import { netBurn } from './nutrition-core.js';
 import {
   initPlans, openEditor, deletePlan, duplicatePlan, planFromProgram, planRowsHTML,
 } from './plans.js';
@@ -44,9 +46,11 @@ function showView(name) {
   $$('.tab').forEach((t) => t.classList.toggle('active', t.dataset.view === name));
   if (name === 'history') renderHistory();
   if (name === 'goals') renderGoals();
+  if (name === 'nutrition') renderNutrition();
   if (name === 'home') {
     renderWeek($('#week-summary'));
     renderHomeGoals();
+    renderHomeNutrition();
   }
   window.scrollTo(0, 0);
 }
@@ -57,6 +61,27 @@ function renderHomeGoals() {
   const el = $('#home-goals');
   el.innerHTML = todayGoalsHTML();
   el.querySelector('[data-goto]')?.addEventListener('click', () => showView('goals'));
+}
+
+function renderHomeNutrition() {
+  const el = $('#home-nutrition');
+  el.innerHTML = todayKcalHTML();
+  el.querySelector('[data-goto]')?.addEventListener('click', () => showView('nutrition'));
+}
+
+// Programs the nutrition view can suggest, with their burn above resting level.
+function suggestionCandidates() {
+  return PROGRAMS.filter((p) => p.kind !== 'combo').map((p) => {
+    const steps = buildSteps(p.id, defaultOpts(p));
+    const secs = totalSeconds(steps);
+    return {
+      id: p.id,
+      kind: p.kind,
+      name: programInfo(p.id, defaultOpts(p)).name,
+      secs,
+      kcal: netBurn(estimateKcal(steps, settings.weightKg), secs, settings.weightKg),
+    };
+  });
 }
 
 /* ---------- Helpers ---------- */
@@ -1091,6 +1116,8 @@ renderHome();
 renderExercises();
 renderResume();
 initGoals();
+initNutrition({ candidates: suggestionCandidates, onStart: openSheet, goto: showView });
+renderHomeNutrition();
 /* ---------- Cloud backup ---------- */
 
 const timeFmt = new Intl.DateTimeFormat('tr-TR', { hour: '2-digit', minute: '2-digit' });
@@ -1148,7 +1175,9 @@ function refreshFromStorage() {
   fillSettings();
   renderHome();
   renderHomeGoals();
+  renderHomeNutrition();
   renderResume();
+  if ($('#view-nutrition').classList.contains('active')) renderNutrition();
   if ($('#view-history').classList.contains('active')) renderHistory();
   if ($('#view-goals').classList.contains('active')) renderGoals();
 }

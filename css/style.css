@@ -1136,3 +1136,29 @@ details.ex.lib summary { flex-wrap: nowrap; gap: 12px; }
 .sync-card[data-state="synced"] { border-color: color-mix(in srgb, var(--lvl-easy) 50%, var(--line)); }
 .sync-ok { color: var(--lvl-easy); }
 .sync-err { color: var(--danger) !important; }
+
+/* ---------- Nutrition ---------- */
+.nut-stats { display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; margin: 10px 0 0; }
+.nut-stats b { display: block; font-size: 22px; font-variant-numeric: tabular-nums; }
+.nut-stats small { color: var(--muted); font-size: 12px; }
+.goal-bar.over i { background: var(--danger); }
+#view-nutrition .card > .btn.ghost:first-child { margin-bottom: 8px; }
+#view-nutrition textarea {
+  width: 100%; box-sizing: border-box; margin: 8px 0; padding: 10px 12px; resize: vertical;
+  background: var(--surface-2); color: var(--text); border: 1px solid var(--line); border-radius: 10px; font: inherit;
+}
+#view-nutrition input[type="text"], #view-nutrition input[type="number"] {
+  background: var(--surface-2); color: var(--text); border: 1px solid var(--line); border-radius: 10px;
+  padding: 9px 10px; font: inherit; min-width: 0;
+}
+.nut-manual { display: flex; gap: 8px; margin-top: 14px; }
+.nut-manual input[type="text"] { flex: 1; }
+.nut-manual input[type="number"] { width: 84px; }
+.nut-draft, .nut-list, .nut-suggest { list-style: none; margin: 8px 0; padding: 0; }
+.nut-draft li { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+.nut-draft li input[type="text"] { flex: 1; }
+.nut-draft li input[type="number"] { width: 84px; }
+.nut-list li, .nut-suggest li { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); }
+.nut-list li span, .nut-suggest li span { flex: 1; }
+.nut-list small, .nut-suggest small { display: block; color: var(--muted); font-size: 12px; }
+.nut-list b { font-variant-numeric: tabular-nums; }
