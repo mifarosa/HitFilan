@@ -8,6 +8,7 @@ import { initSync, signIn, signOut, retrySync } from './sync.js';
 import { renderGoals, initGoals, todayGoalsHTML } from './goals.js';
 import { renderNutrition, initNutrition, todayKcalHTML } from './nutrition.js';
 import { netBurn } from './nutrition-core.js';
+import { renderCounter, initCounter, counterCardHTML } from './counter.js';
 import { SHARE_STYLES, renderShareCanvas, shareOrSave } from './share-image.js';
 import {
   initPlans, openEditor, deletePlan, duplicatePlan, planFromProgram, planRowsHTML,
@@ -48,10 +49,12 @@ function showView(name) {
   if (name === 'history') renderHistory();
   if (name === 'goals') renderGoals();
   if (name === 'nutrition') renderNutrition();
+  if (name === 'counter') renderCounter();
   if (name === 'home') {
     renderWeek($('#week-summary'));
     renderHomeGoals();
     renderHomeNutrition();
+    renderHomeCounter();
   }
   window.scrollTo(0, 0);
 }
@@ -62,6 +65,12 @@ function renderHomeGoals() {
   const el = $('#home-goals');
   el.innerHTML = todayGoalsHTML();
   el.querySelector('[data-goto]')?.addEventListener('click', () => showView('goals'));
+}
+
+function renderHomeCounter() {
+  const el = $('#home-counter');
+  el.innerHTML = counterCardHTML();
+  el.querySelector('[data-goto]')?.addEventListener('click', () => showView('counter'));
 }
 
 function renderHomeNutrition() {
@@ -1175,6 +1184,8 @@ renderExercises();
 renderResume();
 initGoals();
 initNutrition({ candidates: suggestionCandidates, onStart: openSheet, goto: showView });
+initCounter({ goto: showView });
+renderHomeCounter();
 renderHomeNutrition();
 /* ---------- Cloud backup ---------- */
 

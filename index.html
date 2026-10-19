@@ -28,6 +28,7 @@
       <div id="resume-card" class="card resume" hidden></div>
       <div id="home-goals"></div>
       <div id="home-nutrition"></div>
+      <div id="home-counter"></div>
       <div id="week-summary" class="card week"></div>
 
       <div class="section-head">
@@ -120,6 +121,16 @@
         <h2 class="section-title">Biten hedefler</h2>
         <div id="goals-done"></div>
       </div>
+    </section>
+
+    <section id="view-counter" class="view" aria-label="Serbest sayaç">
+      <div class="card counter-head">
+        <button type="button" class="btn ghost" data-goto="home">‹ Geri</button>
+        <h3>Serbest sayaç</h3>
+        <button type="button" class="btn ghost" id="counter-reset-all">Tümünü sıfırla</button>
+      </div>
+      <div class="counter-grid" id="counter-grid"></div>
+      <p class="fineprint">Dört sayaç boş gelir; ne sayacağını ve istersen kaça kadar sayacağını sen belirlersin. Hangisini kullanmak istersen onu kullan.</p>
     </section>
 
     <section id="view-nutrition" class="view" aria-label="Beslenme">

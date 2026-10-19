@@ -1175,3 +1175,32 @@ details.ex.lib summary { flex-wrap: nowrap; gap: 12px; }
 .share-sheet .sheet-actions .btn { flex: 1; }
 .history-item .icon-btn[data-share] svg { stroke: var(--muted); }
 #finish-share { margin-bottom: 8px; }
+
+/* ---------- Free counter ---------- */
+.counter-head { display: flex; align-items: center; gap: 10px; }
+.counter-head h3 { flex: 1; margin: 0; text-align: center; }
+.counter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+.counter { background: var(--surface); border-radius: var(--radius); padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.counter.done { box-shadow: inset 0 0 0 2px var(--lvl-easy); }
+.counter-name {
+  width: 100%; box-sizing: border-box; text-align: center; font: inherit; font-weight: 600;
+  background: transparent; color: var(--text); border: 0; border-bottom: 1px solid var(--line); padding: 6px 4px;
+}
+.counter-tap {
+  display: grid; place-items: center; align-content: center; gap: 2px; min-height: 150px;
+  background: var(--surface-2); color: var(--text); border: 0; border-radius: 14px; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none;
+}
+.counter-tap:active { background: color-mix(in srgb, var(--accent) 25%, var(--surface-2)); }
+.counter-tap b { font-size: 64px; line-height: 1; font-variant-numeric: tabular-nums; }
+.counter-tap small { color: var(--muted); font-size: 13px; }
+.counter .goal-bar { margin: 0; }
+.counter-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.counter-actions .btn { padding: 8px 4px; font-size: 13px; }
+@media (orientation: landscape) and (max-height: 520px) {
+  .counter-grid { grid-template-columns: repeat(4, 1fr); }
+  .counter-tap { min-height: 100px; }
+  .counter-tap b { font-size: 48px; }
+}
+.counter-head .btn { white-space: nowrap; padding: 8px 10px; font-size: 14px; }
+.counter-head h3 { font-size: 16px; }
