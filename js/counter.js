@@ -3,6 +3,7 @@
 import { unlockAudio, beeps, vibrate } from './audio.js';
 
 const KEY = 'hitfilan.counter';
+const RING_LEN = 2 * Math.PI * 54;
 
 const $ = (sel, root = document) => root.querySelector(sel);
 
@@ -36,7 +37,16 @@ export function renderCounter() {
   const done = target > 0 && count >= target;
   const tap = $('#counter-tap');
   tap.classList.toggle('done', done);
-  $('#counter-num').textContent = count;
+  const num = $('#counter-num');
+  num.textContent = count;
+  num.classList.remove('pop');
+  void num.offsetWidth; // restart the pop animation
+  num.classList.add('pop');
+  // Ring fills toward the target; without one it stays a calm full ring.
+  const ring = $('#counter-ring-fg');
+  ring.style.strokeDasharray = RING_LEN;
+  ring.style.strokeDashoffset = target > 0 ? RING_LEN * (1 - Math.min(1, count / target)) : 0;
+  ring.classList.toggle('free', target === 0);
   $('#counter-sub').textContent = target > 0 ? `/ ${target}` : 'dokun ve say';
   // Long numbers shrink so they always fit the screen width.
   $('#counter-num').dataset.len = String(count).length;
