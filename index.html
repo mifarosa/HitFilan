@@ -124,13 +124,16 @@
     </section>
 
     <section id="view-counter" class="view" aria-label="Serbest sayaç">
-      <div class="card counter-head">
-        <button type="button" class="btn ghost" data-goto="home">‹ Geri</button>
-        <h3>Serbest sayaç</h3>
-        <button type="button" class="btn ghost" id="counter-reset-all">Tümünü sıfırla</button>
+      <button type="button" class="counter-tap" id="counter-tap" aria-label="Bir artır">
+        <b id="counter-num">0</b>
+        <small id="counter-sub">dokun ve say</small>
+      </button>
+      <div class="counter-actions">
+        <button type="button" class="btn ghost" id="counter-dec">−1</button>
+        <button type="button" class="btn ghost" id="counter-reset">Sıfırla</button>
+        <button type="button" class="btn ghost" id="counter-target">Doz koy</button>
+        <button type="button" class="btn ghost" id="counter-back">‹ Geri</button>
       </div>
-      <div class="counter-grid" id="counter-grid"></div>
-      <p class="fineprint">Dört sayaç boş gelir; ne sayacağını ve istersen kaça kadar sayacağını sen belirlersin. Hangisini kullanmak istersen onu kullan.</p>
     </section>
 
     <section id="view-nutrition" class="view" aria-label="Beslenme">
