@@ -57,6 +57,7 @@ function showView(name) {
     renderHomeCounter();
   }
   window.scrollTo(0, 0);
+  syncWakeLock();
 }
 
 $$('.tab').forEach((t) => t.addEventListener('click', () => showView(t.dataset.view)));
@@ -693,16 +694,29 @@ $('#clear-history').addEventListener('click', () => {
 
 let wakeLock = null;
 
-async function acquireWakeLock() {
-  if (!settings.wakeLock || !('wakeLock' in navigator)) return;
-  try {
-    wakeLock = await navigator.wakeLock.request('screen');
-  } catch { /* denied or unsupported */ }
+// The screen stays on while a workout runs or the free counter is open.
+function wantsWakeLock() {
+  if (!settings.wakeLock || !('wakeLock' in navigator)) return false;
+  const counterOpen = $('#view-counter').classList.contains('active');
+  return counterOpen || !!(timer && timer.running && !timer.finished);
 }
 
-function releaseWakeLock() {
-  wakeLock?.release?.();
-  wakeLock = null;
+// Event-driven (no polling): call whenever one of the reasons may have changed.
+async function syncWakeLock() {
+  if (!wantsWakeLock()) {
+    wakeLock?.release?.();
+    wakeLock = null;
+    return;
+  }
+  if (wakeLock) return;
+  try {
+    const lock = await navigator.wakeLock.request('screen');
+    // The browser drops the lock whenever the page is hidden.
+    lock.addEventListener('release', () => { if (wakeLock === lock) wakeLock = null; });
+    // The reasons may have gone away while the request was pending.
+    if (wantsWakeLock()) wakeLock = lock;
+    else lock.release();
+  } catch { /* denied or unsupported */ }
 }
 
 /* ---------- Runner ---------- */
@@ -980,7 +994,7 @@ function startRunner(programId, opts, resume = null) {
       $('#rate-tip').textContent = '';
       $('#finish-share').hidden = !run.entry;
       $('#finish').hidden = false;
-      releaseWakeLock();
+      syncWakeLock();
     },
   });
 
@@ -993,7 +1007,7 @@ function startRunner(programId, opts, resume = null) {
   }
   renderStep(steps[0], 0);
   timer.start();
-  acquireWakeLock();
+  syncWakeLock();
 }
 
 function closeRunner() {
@@ -1003,7 +1017,7 @@ function closeRunner() {
   runner.hidden = true;
   document.body.classList.remove('running');
   clearActive();
-  releaseWakeLock();
+  syncWakeLock();
   window.speechSynthesis?.cancel();
   renderWeek($('#week-summary'));
   renderResume();
@@ -1018,7 +1032,7 @@ $('#btn-play').addEventListener('click', () => {
     return;
   }
   timer?.toggle();
-  if (timer?.running) acquireWakeLock();
+  syncWakeLock();
   persistActive();
 });
 $('#btn-next').addEventListener('click', () => timer?.next());
@@ -1126,9 +1140,8 @@ document.addEventListener('visibilitychange', () => {
     persistActive();
     return;
   }
-  if (!timer) return;
-  timer.tick();
-  if (timer.running) acquireWakeLock();
+  timer?.tick();
+  syncWakeLock();
 });
 window.addEventListener('pagehide', persistActive);
 
