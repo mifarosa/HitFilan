@@ -1,5 +1,5 @@
 // Offline cache for the app shell. Bump CACHE when shipping changes.
-const CACHE = 'hitfilan-v13';
+const CACHE = 'hitfilan-v17';
 const ASSETS = [
   './',
   'index.html',
@@ -12,6 +12,11 @@ const ASSETS = [
   'js/visual.js',
   'js/sync.js',
   'js/sync-core.js',
+  'js/nutrition.js',
+  'js/nutrition-core.js',
+  'js/ai.js',
+  'js/counter.js',
+  'js/share-image.js',
   'js/firebase-config.js',
   'js/steps.js',
   'js/store.js',

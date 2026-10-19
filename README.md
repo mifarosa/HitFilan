@@ -22,6 +22,13 @@ npx http-server -p 8080 .
 
 Canlı adres: https://hitfilan.mifarosa.com (GitHub Pages, `main` dalı, kök klasör; alan adı `CNAME` dosyasında).
 
+## Beslenme (kalori dengesi)
+
+Ayarlar'a boy, yaş ve cinsiyet girilince günlük ihtiyaç hesaplanır; yenenler "Beslenme" ekranına yazılır
+(serbest metin → yapay zekâ kcal tahmini, her zaman düzeltilebilir ya da elle girilebilir). Kalori fazlası için
+bisiklet/dumbbell programları önerilir. Yapay zekâ için Firebase konsolunda **AI Logic → Gemini Developer API**
+(ücretsiz, kart gerekmez) açılmalı. Yemek kayıtlarının yedeklenmesi için `firestore.rules` yeniden yayınlanmalı.
+
 ## Bulut yedeği (Firebase)
 Ayarlar → **Bulut yedeği** ile Google hesabıyla giriş yapılınca antrenman geçmişi, planlar, hedefler ve ayarlar Firestore'a kaydedilir ve cihazlar arasında eşitlenir. Uygulama önce telefondaki veriyle çalışır; internet yokken yapılan değişiklikler bağlanınca yüklenir. Aynı kayıt iki yerde değiştiyse en yenisi geçerli olur, silinen kayıtlar her yerde silinir.
 

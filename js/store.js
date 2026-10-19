@@ -6,6 +6,7 @@
 //   h_<id>          one history entry
 //   p_<id>          one plan
 //   g_<id>          one goal
+//   m_<id>          one meal (food log entry)
 // META_KEY keeps when each document last changed here, and tombstones for
 // deleted ones, so cloud sync can merge by "newest wins" and carry deletions.
 
@@ -13,6 +14,7 @@ const SETTINGS_KEY = 'hitfilan.settings';
 const HISTORY_KEY = 'hitfilan.history';
 const GOALS_KEY = 'hitfilan.goals';
 const PLANS_KEY = 'hitfilan.plans';
+const MEALS_KEY = 'hitfilan.meals';
 const ACTIVE_KEY = 'hitfilan.active';
 const META_KEY = 'hitfilan.meta';
 
@@ -23,6 +25,11 @@ export const DEFAULT_SETTINGS = {
   warnSeconds: 10, // heads-up before each change
   weightReps: 12, // dumbbell moves in circuits: reps per set (0 = timed)
   weeklyGoal: 3, // workouts per week that keep the streak going
+  heightCm: 0, // with age and sex: daily calorie target (0 = not set)
+  age: 0,
+  sex: 0, // 1 = male, 2 = female (numbers: the settings form only stores numbers)
+  activity: 1.375, // daily activity multiplier
+  dailyKcal: 0, // manual daily target; 0 = estimate from the profile
   resEasy: 2, // resistance knob levels on the user's bike
   resModerate: 5,
   resHard: 8,
@@ -37,6 +44,7 @@ export const COLLECTIONS = {
   history: { key: HISTORY_KEY, prefix: 'h_' },
   plan: { key: PLANS_KEY, prefix: 'p_' },
   goal: { key: GOALS_KEY, prefix: 'g_' },
+  meal: { key: MEALS_KEY, prefix: 'm_' },
 };
 
 function read(key, fallback) {
@@ -135,6 +143,14 @@ export function loadGoals() {
 
 export function saveGoals(goals) {
   saveList('goal', goals);
+}
+
+export function loadMeals() {
+  return readList(MEALS_KEY);
+}
+
+export function saveMeals(meals) {
+  saveList('meal', meals);
 }
 
 export function loadPlans() {

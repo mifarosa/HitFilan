@@ -2,7 +2,7 @@ rules_version = '2';
 
 // HitFilan cloud backup (js/sync.js). Each signed-in user can only reach
 // users/{their uid}/items; one document per record:
-//   { kind: 'settings'|'history'|'plan'|'goal', data: JSON string or null,
+//   { kind: 'settings'|'history'|'plan'|'goal'|'meal', data: JSON string or null,
 //     updatedAt: int (ms), deleted: bool }
 // Paste into Firebase console > Firestore Database > Rules and publish.
 service cloud.firestore {
@@ -16,7 +16,7 @@ service cloud.firestore {
       allow create, update: if isOwner(uid)
         && itemId.size() <= 80
         && request.resource.data.keys().hasOnly(['kind', 'data', 'updatedAt', 'deleted'])
-        && request.resource.data.kind in ['settings', 'history', 'plan', 'goal']
+        && request.resource.data.kind in ['settings', 'history', 'plan', 'goal', 'meal']
         && (request.resource.data.data == null
             || (request.resource.data.data is string && request.resource.data.data.size() <= 200000))
         && request.resource.data.updatedAt is int
