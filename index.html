@@ -301,6 +301,20 @@
 
   <dialog id="step-picker" class="sheet"></dialog>
 
+  <dialog id="share-dialog" class="sheet share-sheet">
+    <div class="sheet-inner">
+    <h3>Paylaşım görseli</h3>
+    <div class="chips" id="share-styles" role="group" aria-label="Görsel türü"></div>
+    <div class="share-preview" id="share-preview"></div>
+    <p class="fineprint" id="share-hint"></p>
+    <div class="sheet-actions">
+      <button type="button" class="btn primary" id="share-go">Paylaş</button>
+      <button type="button" class="btn ghost" id="share-save">Kaydet</button>
+      <button type="button" class="btn ghost" id="share-close">Kapat</button>
+    </div>
+    </div>
+  </dialog>
+
   <div id="runner" class="runner" hidden>
     <div class="runner-top">
       <button class="icon-btn" id="runner-close" aria-label="Antrenmanı bitir">
@@ -370,6 +384,7 @@
           </div>
           <p class="rate-tip" id="rate-tip"></p>
         </div>
+        <button class="btn ghost full" id="finish-share" hidden>Görsel oluştur ve paylaş</button>
         <button class="btn primary full" id="finish-close">Kapat</button>
       </div>
     </div>

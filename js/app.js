@@ -8,6 +8,7 @@ import { initSync, signIn, signOut, retrySync } from './sync.js';
 import { renderGoals, initGoals, todayGoalsHTML } from './goals.js';
 import { renderNutrition, initNutrition, todayKcalHTML } from './nutrition.js';
 import { netBurn } from './nutrition-core.js';
+import { SHARE_STYLES, renderShareCanvas, shareOrSave } from './share-image.js';
 import {
   initPlans, openEditor, deletePlan, duplicatePlan, planFromProgram, planRowsHTML,
 } from './plans.js';
@@ -581,6 +582,9 @@ function historyItemHTML(e) {
         ${e.rpe ? `<span class="badge rpe-${e.rpe}">${RPE_LABELS[e.rpe]}</span>` : ''}
         <span class="meta">${formatTime(e.durationSec)} · ~${e.kcal} kcal</span>
       </div>
+      <button class="icon-btn small" data-share="${e.id}" aria-label="Paylaşım görseli">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M8 8l4-4 4 4M5 13v6h14v-6"/></svg>
+      </button>
       <button class="icon-btn small" data-remove="${e.id}" aria-label="Kaydı sil">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
@@ -608,6 +612,10 @@ function renderHistory() {
     return;
   }
   el.innerHTML = shown.map(historyItemHTML).join('');
+  $$('[data-share]', el).forEach((b) => b.addEventListener('click', () => {
+    const entry = loadHistory().find((x) => x.id === b.dataset.share);
+    if (entry) openShare(entry);
+  }));
   $$('[data-remove]', el).forEach((b) => b.addEventListener('click', () => {
     if (confirm('Bu kayıt silinsin mi?')) {
       removeHistory(b.dataset.remove);
@@ -891,6 +899,7 @@ function saveRun(completed) {
   run.saved = true;
   const entry = historyEntry(run.programId, run.name, run.startedAt, run.steps, elapsed, completed);
   run.historyId = entry.id;
+  run.entry = entry;
   addHistory(entry);
 }
 
@@ -960,6 +969,7 @@ function startRunner(programId, opts, resume = null) {
       $('#finish-text').textContent = `${run.name} bitti. ${formatTime(t.totalElapsed())} · ~${estimateKcal(run.steps, settings.weightKg, t.totalElapsed())} kcal`;
       $$('#rate-opts button').forEach((b) => b.classList.remove('active'));
       $('#rate-tip').textContent = '';
+      $('#finish-share').hidden = !run.entry;
       $('#finish').hidden = false;
       releaseWakeLock();
     },
@@ -1053,6 +1063,54 @@ $$('#rate-opts button').forEach((b) => b.addEventListener('click', () => {
 }));
 
 $('#finish-close').addEventListener('click', closeRunner);
+
+/* ---------- Share picture ---------- */
+
+let shareEntry = null;
+let shareStyle = 'card';
+
+function shareData() {
+  const e = shareEntry;
+  return {
+    name: e.name,
+    durationSec: e.durationSec,
+    kcal: e.kcal,
+    date: e.date,
+    streak: streakInfo(loadHistory()).current,
+  };
+}
+
+async function drawSharePreview() {
+  $$('#share-styles .chip').forEach((c) => {
+    const on = c.dataset.style === shareStyle;
+    c.classList.toggle('active', on);
+    c.setAttribute('aria-pressed', on);
+  });
+  const canvas = await renderShareCanvas(shareStyle, shareData());
+  $('#share-preview').replaceChildren(canvas);
+  $('#share-hint').textContent = shareStyle === 'card'
+    ? 'Instagram hikâyesi boyutunda (1080×1920).'
+    : 'Arkası saydam PNG: kendi fotoğrafının üstüne yapıştırabilirsin.';
+}
+
+function openShare(entry) {
+  shareEntry = entry;
+  $('#share-styles').innerHTML = SHARE_STYLES
+    .map((st) => `<button type="button" class="chip" data-style="${st.id}">${st.label}</button>`).join('');
+  $('#share-dialog').showModal();
+  drawSharePreview();
+}
+
+$('#share-styles').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-style]');
+  if (!b) return;
+  shareStyle = b.dataset.style;
+  drawSharePreview();
+});
+$('#share-go').addEventListener('click', () => shareOrSave(shareStyle, shareData(), 'share'));
+$('#share-save').addEventListener('click', () => shareOrSave(shareStyle, shareData(), 'save'));
+$('#share-close').addEventListener('click', () => $('#share-dialog').close());
+$('#finish-share').addEventListener('click', () => run?.entry && openShare(run.entry));
 
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') {

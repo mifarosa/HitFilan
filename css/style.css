@@ -1162,3 +1162,16 @@ details.ex.lib summary { flex-wrap: nowrap; gap: 12px; }
 .nut-list li span, .nut-suggest li span { flex: 1; }
 .nut-list small, .nut-suggest small { display: block; color: var(--muted); font-size: 12px; }
 .nut-list b { font-variant-numeric: tabular-nums; }
+
+/* ---------- Share picture ---------- */
+.share-sheet h3 { margin: 0 0 12px; }
+.share-preview {
+  display: grid; place-items: center; margin: 14px 0 8px; padding: 12px; border-radius: 14px;
+  /* checkerboard so transparent areas are visible */
+  background: repeating-conic-gradient(#2b323b 0% 25%, #1b2128 0% 50%) 0 0 / 20px 20px;
+}
+.share-preview canvas { max-width: 100%; max-height: 46vh; width: auto; height: auto; }
+.share-sheet .sheet-actions { display: flex; gap: 8px; margin-top: 12px; }
+.share-sheet .sheet-actions .btn { flex: 1; }
+.history-item .icon-btn[data-share] svg { stroke: var(--muted); }
+#finish-share { margin-bottom: 8px; }
