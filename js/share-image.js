@@ -112,7 +112,7 @@ function lines(d) {
     minutes,
     day: upper(weekdayFmt.format(when)),
     date: upper(dayFmt.format(when)),
-    hiit: d.hiit ? `HIIT · ${d.hiit.count} TUR · ${Math.max(1, Math.round(d.hiit.secs / 60))} DK` : '',
+    hiit: d.hiit ? `HIIT · ${d.hiit.count} TUR` : '',
   };
 }
 
