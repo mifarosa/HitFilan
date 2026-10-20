@@ -1126,9 +1126,10 @@ async function drawSharePreview() {
   });
   const canvas = await renderShareCanvas(shareStyle, shareData());
   $('#share-preview').replaceChildren(canvas);
-  $('#share-hint').textContent = shareStyle === 'card'
-    ? 'Instagram hikâyesi boyutunda (1080×1920).'
-    : 'Arkası saydam PNG: kendi fotoğrafının üstüne yapıştırabilirsin.';
+  $('#share-hint').textContent = {
+    card: 'Instagram hikâyesi boyutunda (1080×1920).',
+    wide: '16:9 yatay görsel (1920×1080). Ortadaki kare boş: fotoğrafı ya da müzik çıkartmasını Instagram’da oraya koyabilirsin.',
+  }[shareStyle] || 'Arkası saydam PNG: kendi fotoğrafının üstüne yapıştırabilirsin.';
 }
 
 function openShare(entry) {
