@@ -232,9 +232,111 @@ function drawCard(d, logo) {
   return c;
 }
 
+// Sticker-style text: thick dark outline so it reads on any photo, soft shadow underneath.
+function stickerText(ctx, text, x, y, { size, color = '#fff', align = 'center', lean = 0, maxWidth, outline = '#0d1117' }) {
+  let sz = size;
+  ctx.font = `900 ${sz}px ${FONT}`;
+  while (maxWidth && ctx.measureText(text).width > maxWidth && sz > 18) {
+    sz -= 2;
+    ctx.font = `900 ${sz}px ${FONT}`;
+  }
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.transform(1, 0, lean, 1, 0, 0);
+  ctx.textAlign = align;
+  ctx.textBaseline = 'alphabetic';
+  ctx.lineJoin = 'round';
+  ctx.miterLimit = 2;
+  ctx.lineWidth = sz * 0.16;
+  ctx.strokeStyle = outline;
+  shadowOn(ctx, true, 14);
+  ctx.strokeText(text, 0, 0);
+  shadowOn(ctx, false);
+  ctx.fillStyle = color;
+  ctx.fillText(text, 0, 0);
+  ctx.restore();
+}
+
+// A slanted ribbon with centered text; `fill` and `ink` choose its colors.
+function ribbon(ctx, text, cx, y, h, { fill, ink, size, lean, minW = 0, maxW = 960 }) {
+  ctx.font = `900 ${size}px ${FONT}`;
+  const w = Math.max(minW, Math.min(maxW, ctx.measureText(text).width + 100));
+  ctx.save();
+  shadowOn(ctx, true, 14);
+  ctx.fillStyle = '#0d1117';
+  slantPath(ctx, cx - w / 2 - 6, y - 6, w + 12, h + 12, lean);
+  ctx.fill();
+  shadowOn(ctx, false);
+  ctx.fillStyle = fill;
+  slantPath(ctx, cx - w / 2, y, w, h, lean);
+  ctx.fill();
+  ctx.restore();
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.fillStyle = ink;
+  ctx.font = `900 ${size}px ${FONT}`;
+  let sz = size;
+  while (ctx.measureText(text).width > w - 70 && sz > 18) {
+    sz -= 2;
+    ctx.font = `900 ${sz}px ${FONT}`;
+  }
+  ctx.translate(cx, y + h * 0.68);
+  ctx.transform(1, 0, lean, 1, 0, 0);
+  ctx.fillText(text, 0, 0);
+  ctx.restore();
+}
+
 function drawTransparent(d, logo) {
   const [c, ctx] = makeCanvas(1080, 1080);
-  drawComposition(ctx, d, logo, { lean: LEAN_LEFT, shadow: true });
+  const L = lines(d);
+  const lean = 0.05;
+  const cx = 540;
+
+  // Brand
+  ctx.font = `900 88px ${FONT}`;
+  const wHit = ctx.measureText('HIT').width;
+  const wFilan = ctx.measureText('FILAN').width;
+  const logoSize = 120;
+  const x0 = cx - (logoSize + 26 + wHit + wFilan) / 2;
+  drawLogo(ctx, logo, x0, 36, logoSize, true);
+  stickerText(ctx, 'HIT', x0 + logoSize + 26, 36 + logoSize * 0.74, { size: 88, align: 'left', lean });
+  stickerText(ctx, 'FILAN', x0 + logoSize + 26 + wHit, 36 + logoSize * 0.74, { size: 88, align: 'left', color: ACCENT, lean });
+
+  // Speed streaks behind the ring, left side
+  const ringY = 520;
+  const R = 255;
+  ctx.save();
+  shadowOn(ctx, true, 12);
+  [[ringY - 70, 250, 26], [ringY - 15, 300, 26], [ringY + 40, 220, 26]].forEach(([y, w, h], i) => {
+    ctx.fillStyle = i === 1 ? '#fff' : ACCENT;
+    slantPath(ctx, cx - R - w + 40, y, w, h, -0.5);
+    ctx.fill();
+  });
+  ctx.restore();
+
+  // Ring: dark outline underneath, orange on top (like the workout ring, full)
+  ctx.save();
+  shadowOn(ctx, true, 18);
+  ctx.lineWidth = 46;
+  ctx.strokeStyle = '#0d1117';
+  ctx.beginPath();
+  ctx.arc(cx, ringY, R, 0, Math.PI * 2);
+  ctx.stroke();
+  shadowOn(ctx, false);
+  ctx.lineWidth = 28;
+  ctx.strokeStyle = ACCENT;
+  ctx.stroke();
+  ctx.restore();
+
+  // Minutes inside the ring
+  stickerText(ctx, String(L.minutes), cx, ringY + 85, { size: 260, lean, maxWidth: R * 1.5 });
+  stickerText(ctx, 'DAKİKA', cx, ringY + 160, { size: 50, color: ACCENT, lean });
+
+  // Ribbons: day/date and HIIT
+  ribbon(ctx, `${L.day} · ${L.date}`, cx, 830, 78, { fill: ACCENT, ink: '#16110c', size: 50, lean });
+  if (L.hiit) ribbon(ctx, L.hiit, cx, 922, 72, { fill: '#fff', ink: '#0d1117', size: 46, lean, maxW: 900 });
+
+  stickerText(ctx, SITE, cx, 1050, { size: 38, lean, color: 'rgba(255,255,255,.95)' });
   return c;
 }
 
