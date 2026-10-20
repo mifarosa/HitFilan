@@ -13,9 +13,10 @@ export const SHARE_STYLES = [
 export const SITE = 'hitfilan.mifarosa.com';
 
 const ACCENT = '#ff7a1a';
+const DARK_ACCENT = '#a64a06';
 const FONT = '"Arial Black", "Helvetica Neue", Impact, system-ui, sans-serif';
-const LEAN_LEFT = 0.2; // transparent pictures lean to the left
-const LEAN_RIGHT = -0.14; // classic sports italic for the card
+const LEAN_LEFT = 0.07; // transparent pictures lean slightly to the left
+const LEAN_RIGHT = -0.04; // card: barely slanted, the 3D depth carries the look
 
 const upper = (s) => s.toLocaleUpperCase('tr-TR');
 const weekdayFmt = new Intl.DateTimeFormat('tr-TR', { weekday: 'long' });
@@ -72,25 +73,32 @@ function shadowOn(ctx, on, blur = 16) {
   }
 }
 
-// Draws text skewed around its baseline; returns its width.
-function slantText(ctx, text, x, y, { size, color = '#fff', align = 'left', lean, shadow, maxWidth }) {
+// Draws text skewed around its baseline with an optional 3D extrusion (stacked
+// copies pushed down-right); returns nothing. `depth` is in px.
+function slantText(ctx, text, x, y, { size, color = '#fff', align = 'left', lean, shadow, maxWidth, depth = 0, side }) {
   let s = size;
   ctx.font = `900 ${s}px ${FONT}`;
   while (maxWidth && ctx.measureText(text).width > maxWidth && s > 18) {
     s -= 2;
     ctx.font = `900 ${s}px ${FONT}`;
   }
-  const w = ctx.measureText(text).width;
   ctx.save();
-  shadowOn(ctx, shadow);
   ctx.translate(x, y);
   ctx.transform(1, 0, lean, 1, 0, 0);
   ctx.textAlign = align;
   ctx.textBaseline = 'alphabetic';
+  if (depth > 0) {
+    ctx.fillStyle = side || '#0d1117';
+    for (let i = depth; i >= 1; i--) {
+      if (i === depth) shadowOn(ctx, shadow, 18); // one shadow under the whole block
+      else shadowOn(ctx, false);
+      ctx.fillText(text, i, i);
+    }
+  }
+  shadowOn(ctx, shadow && depth === 0);
   ctx.fillStyle = color;
   ctx.fillText(text, 0, 0);
   ctx.restore();
-  return w;
 }
 
 function drawLogo(ctx, logo, x, y, size, shadow) {
@@ -132,11 +140,11 @@ function drawComposition(ctx, d, logo, { lean, shadow }) {
   const total = logoSize + 28 + wHit + wFilan;
   const x0 = cx - total / 2;
   drawLogo(ctx, logo, x0, 40, logoSize, shadow);
-  slantText(ctx, 'HIT', x0 + logoSize + 28, 40 + logoSize * 0.74, { size: brandSize, lean, shadow });
-  slantText(ctx, 'FILAN', x0 + logoSize + 28 + wHit, 40 + logoSize * 0.74, { size: brandSize, color: ACCENT, lean, shadow });
+  slantText(ctx, 'HIT', x0 + logoSize + 28, 40 + logoSize * 0.74, { size: brandSize, lean, shadow, depth: 5 });
+  slantText(ctx, 'FILAN', x0 + logoSize + 28 + wHit, 40 + logoSize * 0.74, { size: brandSize, color: ACCENT, lean, shadow, depth: 5, side: DARK_ACCENT });
 
   // Tag
-  slantText(ctx, 'ANTRENMAN TAMAM', cx, 290, { size: 50, color: ACCENT, align: 'center', lean, shadow });
+  slantText(ctx, 'ANTRENMAN TAMAM', cx, 290, { size: 50, color: ACCENT, align: 'center', lean, shadow, depth: 3, side: DARK_ACCENT });
 
   // Minutes: the hero number
   ctx.font = `900 380px ${FONT}`;
@@ -145,11 +153,11 @@ function drawComposition(ctx, d, logo, { lean, shadow }) {
   const wDk = ctx.measureText('DK').width;
   const gap = 24;
   const nx = cx - (wNum + gap + wDk) / 2;
-  slantText(ctx, String(L.minutes), nx, 600, { size: 380, lean, shadow });
-  slantText(ctx, 'DK', nx + wNum + gap, 600, { size: 120, color: ACCENT, lean, shadow });
+  slantText(ctx, String(L.minutes), nx, 600, { size: 380, lean, shadow, depth: 18, side: '#9aa3ad' });
+  slantText(ctx, 'DK', nx + wNum + gap, 600, { size: 120, color: ACCENT, lean, shadow, depth: 8, side: DARK_ACCENT });
 
   // Day and date
-  slantText(ctx, `${L.day} · ${L.date}`, cx, 700, { size: 56, align: 'center', lean, shadow, maxWidth: 960 });
+  slantText(ctx, `${L.day} · ${L.date}`, cx, 700, { size: 56, align: 'center', lean, shadow, maxWidth: 960, depth: 4, side: '#9aa3ad' });
 
   // HIIT amount in an accent block
   if (L.hiit) {
@@ -157,6 +165,10 @@ function drawComposition(ctx, d, logo, { lean, shadow }) {
     const w = Math.min(960, ctx.measureText(L.hiit).width + 90);
     ctx.save();
     shadowOn(ctx, shadow, 10);
+    ctx.fillStyle = DARK_ACCENT;
+    slantPath(ctx, cx - w / 2 + 9, 759, w, 96, lean);
+    ctx.fill();
+    shadowOn(ctx, false);
     ctx.fillStyle = ACCENT;
     slantPath(ctx, cx - w / 2, 750, w, 96, lean);
     ctx.fill();
@@ -244,7 +256,7 @@ function drawStrip(d, logo) {
   drawLogo(ctx, logo, 120, 34, 84, false);
   const parts = [`${L.minutes} DK`, L.day];
   if (L.hiit) parts.push(`HIIT ${d.hiit.count} TUR`);
-  slantText(ctx, parts.join(' · '), 228, 96, { size: 58, lean, maxWidth: 770 });
+  slantText(ctx, parts.join(' · '), 228, 96, { size: 58, lean, maxWidth: 770, depth: 4, side: '#4a525c' });
   slantText(ctx, `HITFILAN · ${SITE}`, 228, 160, { size: 30, color: ACCENT, lean, maxWidth: 770 });
   return c;
 }
