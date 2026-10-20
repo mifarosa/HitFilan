@@ -15,8 +15,7 @@ export const SITE = 'hitfilan.mifarosa.com';
 const ACCENT = '#ff7a1a';
 const DARK_ACCENT = '#a64a06';
 const FONT = '"Arial Black", "Helvetica Neue", Impact, system-ui, sans-serif';
-const LEAN_LEFT = 0.07; // transparent pictures lean slightly to the left
-const LEAN_RIGHT = -0.04; // card: barely slanted, the 3D depth carries the look
+const LEAN = 0; // plain upright text
 
 const upper = (s) => s.toLocaleUpperCase('tr-TR');
 const weekdayFmt = new Intl.DateTimeFormat('tr-TR', { weekday: 'long' });
@@ -73,9 +72,8 @@ function shadowOn(ctx, on, blur = 16) {
   }
 }
 
-// Draws text skewed around its baseline with an optional 3D extrusion (stacked
-// copies pushed down-right); returns nothing. `depth` is in px.
-function slantText(ctx, text, x, y, { size, color = '#fff', align = 'left', lean, shadow, maxWidth, depth = 0, side }) {
+// Draws upright (optionally slanted) text with a soft shadow.
+function slantText(ctx, text, x, y, { size, color = '#fff', align = 'left', lean = 0, shadow, maxWidth }) {
   let s = size;
   ctx.font = `900 ${s}px ${FONT}`;
   while (maxWidth && ctx.measureText(text).width > maxWidth && s > 18) {
@@ -87,15 +85,7 @@ function slantText(ctx, text, x, y, { size, color = '#fff', align = 'left', lean
   ctx.transform(1, 0, lean, 1, 0, 0);
   ctx.textAlign = align;
   ctx.textBaseline = 'alphabetic';
-  if (depth > 0) {
-    ctx.fillStyle = side || '#0d1117';
-    for (let i = depth; i >= 1; i--) {
-      if (i === depth) shadowOn(ctx, shadow, 18); // one shadow under the whole block
-      else shadowOn(ctx, false);
-      ctx.fillText(text, i, i);
-    }
-  }
-  shadowOn(ctx, shadow && depth === 0);
+  shadowOn(ctx, shadow);
   ctx.fillStyle = color;
   ctx.fillText(text, 0, 0);
   ctx.restore();
@@ -140,11 +130,11 @@ function drawComposition(ctx, d, logo, { lean, shadow }) {
   const total = logoSize + 28 + wHit + wFilan;
   const x0 = cx - total / 2;
   drawLogo(ctx, logo, x0, 40, logoSize, shadow);
-  slantText(ctx, 'HIT', x0 + logoSize + 28, 40 + logoSize * 0.74, { size: brandSize, lean, shadow, depth: 5 });
-  slantText(ctx, 'FILAN', x0 + logoSize + 28 + wHit, 40 + logoSize * 0.74, { size: brandSize, color: ACCENT, lean, shadow, depth: 5, side: DARK_ACCENT });
+  slantText(ctx, 'HIT', x0 + logoSize + 28, 40 + logoSize * 0.74, { size: brandSize, lean, shadow });
+  slantText(ctx, 'FILAN', x0 + logoSize + 28 + wHit, 40 + logoSize * 0.74, { size: brandSize, color: ACCENT, lean, shadow });
 
   // Tag
-  slantText(ctx, 'ANTRENMAN TAMAM', cx, 290, { size: 50, color: ACCENT, align: 'center', lean, shadow, depth: 3, side: DARK_ACCENT });
+  slantText(ctx, 'ANTRENMAN TAMAM', cx, 290, { size: 50, color: ACCENT, align: 'center', lean, shadow });
 
   // Minutes: the hero number
   ctx.font = `900 380px ${FONT}`;
@@ -153,11 +143,11 @@ function drawComposition(ctx, d, logo, { lean, shadow }) {
   const wDk = ctx.measureText('DK').width;
   const gap = 24;
   const nx = cx - (wNum + gap + wDk) / 2;
-  slantText(ctx, String(L.minutes), nx, 600, { size: 380, lean, shadow, depth: 18, side: '#9aa3ad' });
-  slantText(ctx, 'DK', nx + wNum + gap, 600, { size: 120, color: ACCENT, lean, shadow, depth: 8, side: DARK_ACCENT });
+  slantText(ctx, String(L.minutes), nx, 600, { size: 380, lean, shadow });
+  slantText(ctx, 'DK', nx + wNum + gap, 600, { size: 120, color: ACCENT, lean, shadow });
 
   // Day and date
-  slantText(ctx, `${L.day} · ${L.date}`, cx, 700, { size: 56, align: 'center', lean, shadow, maxWidth: 960, depth: 4, side: '#9aa3ad' });
+  slantText(ctx, `${L.day} · ${L.date}`, cx, 700, { size: 56, align: 'center', lean, shadow, maxWidth: 960 });
 
   // HIIT amount in an accent block
   if (L.hiit) {
@@ -227,7 +217,7 @@ function drawCard(d, logo) {
 
   ctx.save();
   ctx.translate(0, 420);
-  drawComposition(ctx, d, logo, { lean: LEAN_RIGHT, shadow: false });
+  drawComposition(ctx, d, logo, { lean: LEAN, shadow: false });
   ctx.restore();
   return c;
 }
@@ -257,39 +247,9 @@ function stickerText(ctx, text, x, y, { size, color = '#fff', align = 'center', 
   ctx.restore();
 }
 
-// A slanted ribbon with centered text; `fill` and `ink` choose its colors.
-function ribbon(ctx, text, cx, y, h, { fill, ink, size, lean, minW = 0, maxW = 960 }) {
-  ctx.font = `900 ${size}px ${FONT}`;
-  const w = Math.max(minW, Math.min(maxW, ctx.measureText(text).width + 100));
-  ctx.save();
-  shadowOn(ctx, true, 14);
-  ctx.fillStyle = '#0d1117';
-  slantPath(ctx, cx - w / 2 - 6, y - 6, w + 12, h + 12, lean);
-  ctx.fill();
-  shadowOn(ctx, false);
-  ctx.fillStyle = fill;
-  slantPath(ctx, cx - w / 2, y, w, h, lean);
-  ctx.fill();
-  ctx.restore();
-  ctx.save();
-  ctx.textAlign = 'center';
-  ctx.fillStyle = ink;
-  ctx.font = `900 ${size}px ${FONT}`;
-  let sz = size;
-  while (ctx.measureText(text).width > w - 70 && sz > 18) {
-    sz -= 2;
-    ctx.font = `900 ${sz}px ${FONT}`;
-  }
-  ctx.translate(cx, y + h * 0.68);
-  ctx.transform(1, 0, lean, 1, 0, 0);
-  ctx.fillText(text, 0, 0);
-  ctx.restore();
-}
-
 function drawTransparent(d, logo) {
   const [c, ctx] = makeCanvas(1080, 1080);
   const L = lines(d);
-  const lean = 0.05;
   const cx = 540;
 
   // Brand
@@ -298,52 +258,22 @@ function drawTransparent(d, logo) {
   const wFilan = ctx.measureText('FILAN').width;
   const logoSize = 120;
   const x0 = cx - (logoSize + 26 + wHit + wFilan) / 2;
-  drawLogo(ctx, logo, x0, 36, logoSize, true);
-  stickerText(ctx, 'HIT', x0 + logoSize + 26, 36 + logoSize * 0.74, { size: 88, align: 'left', lean });
-  stickerText(ctx, 'FILAN', x0 + logoSize + 26 + wHit, 36 + logoSize * 0.74, { size: 88, align: 'left', color: ACCENT, lean });
+  drawLogo(ctx, logo, x0, 60, logoSize, true);
+  stickerText(ctx, 'HIT', x0 + logoSize + 26, 60 + logoSize * 0.74, { size: 88, align: 'left' });
+  stickerText(ctx, 'FILAN', x0 + logoSize + 26 + wHit, 60 + logoSize * 0.74, { size: 88, align: 'left', color: ACCENT });
 
-  // Speed streaks behind the ring, left side
-  const ringY = 520;
-  const R = 255;
-  ctx.save();
-  shadowOn(ctx, true, 12);
-  [[ringY - 70, 250, 26], [ringY - 15, 300, 26], [ringY + 40, 220, 26]].forEach(([y, w, h], i) => {
-    ctx.fillStyle = i === 1 ? '#fff' : ACCENT;
-    slantPath(ctx, cx - R - w + 40, y, w, h, -0.5);
-    ctx.fill();
-  });
-  ctx.restore();
-
-  // Ring: dark outline underneath, orange on top (like the workout ring, full)
-  ctx.save();
-  shadowOn(ctx, true, 18);
-  ctx.lineWidth = 46;
-  ctx.strokeStyle = '#0d1117';
-  ctx.beginPath();
-  ctx.arc(cx, ringY, R, 0, Math.PI * 2);
-  ctx.stroke();
-  shadowOn(ctx, false);
-  ctx.lineWidth = 28;
-  ctx.strokeStyle = ACCENT;
-  ctx.stroke();
-  ctx.restore();
-
-  // Minutes inside the ring
-  stickerText(ctx, String(L.minutes), cx, ringY + 85, { size: 260, lean, maxWidth: R * 1.5 });
-  stickerText(ctx, 'DAKİKA', cx, ringY + 160, { size: 50, color: ACCENT, lean });
-
-  // Ribbons: day/date and HIIT
-  ribbon(ctx, `${L.day} · ${L.date}`, cx, 830, 78, { fill: ACCENT, ink: '#16110c', size: 50, lean });
-  if (L.hiit) ribbon(ctx, L.hiit, cx, 922, 72, { fill: '#fff', ink: '#0d1117', size: 46, lean, maxW: 900 });
-
-  stickerText(ctx, SITE, cx, 1050, { size: 38, lean, color: 'rgba(255,255,255,.95)' });
+  // Minutes, day, HIIT, site: plain centered lines
+  stickerText(ctx, `${L.minutes} DK`, cx, 520, { size: 300, maxWidth: 940 });
+  stickerText(ctx, `${L.day} · ${L.date}`, cx, 650, { size: 58, maxWidth: 940 });
+  if (L.hiit) stickerText(ctx, L.hiit, cx, 760, { size: 58, color: ACCENT, maxWidth: 940 });
+  stickerText(ctx, SITE, cx, 940, { size: 42, color: 'rgba(255,255,255,.95)' });
   return c;
 }
 
 function drawStrip(d, logo) {
   const [c, ctx] = makeCanvas(1080, 200);
   const L = lines(d);
-  const lean = LEAN_LEFT;
+  const lean = LEAN;
   ctx.fillStyle = 'rgba(13,17,23,.84)';
   slantPath(ctx, 70, 12, 960, 176, lean);
   ctx.fill();
@@ -358,7 +288,7 @@ function drawStrip(d, logo) {
   drawLogo(ctx, logo, 120, 34, 84, false);
   const parts = [`${L.minutes} DK`, L.day];
   if (L.hiit) parts.push(`HIIT ${d.hiit.count} TUR`);
-  slantText(ctx, parts.join(' · '), 228, 96, { size: 58, lean, maxWidth: 770, depth: 4, side: '#4a525c' });
+  slantText(ctx, parts.join(' · '), 228, 96, { size: 58, lean, maxWidth: 770 });
   slantText(ctx, `HITFILAN · ${SITE}`, 228, 160, { size: 30, color: ACCENT, lean, maxWidth: 770 });
   return c;
 }
