@@ -1092,15 +1092,30 @@ $('#finish-close').addEventListener('click', closeRunner);
 let shareEntry = null;
 let shareStyle = 'card';
 
+// HIIT amount of a finished workout: the hard (bike) or work (circuit) steps it got through.
+function hiitOf(entry) {
+  try {
+    const program = getProgram(entry.programId);
+    let t = 0;
+    let count = 0;
+    let secs = 0;
+    for (const step of buildSteps(entry.programId, defaultOpts(program))) {
+      if (t >= entry.durationSec) break;
+      if (step.level === 'hard' || step.level === 'work') {
+        count += 1;
+        secs += Math.min(step.dur, entry.durationSec - t);
+      }
+      t += step.dur;
+    }
+    return count ? { count, secs } : null;
+  } catch {
+    return null; // plan was deleted or changed
+  }
+}
+
 function shareData() {
   const e = shareEntry;
-  return {
-    name: e.name,
-    durationSec: e.durationSec,
-    kcal: e.kcal,
-    date: e.date,
-    streak: streakInfo(loadHistory()).current,
-  };
+  return { name: e.name, durationSec: e.durationSec, date: e.date, hiit: hiitOf(e) };
 }
 
 async function drawSharePreview() {

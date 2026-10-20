@@ -1,23 +1,38 @@
 // "Workout done" pictures for sharing (e.g. Instagram), drawn on a canvas and
 // exported as PNG. Three styles:
-//   card         1080x1920 story with a background
+//   card         1080x1920 story with a sporty background
 //   transparent  1080x1080, no background (a sticker over the user's own photo)
-//   strip        1080x180 one-line pill, transparent around it
+//   strip        1080x200 one-line slanted pill, transparent around it
+// Input: { name, durationSec, date, hiit: { count, secs } | null }
 export const SHARE_STYLES = [
   { id: 'card', label: 'Arka planlı' },
   { id: 'transparent', label: 'Saydam' },
   { id: 'strip', label: 'Çizgi' },
 ];
 
-const ACCENT = '#ff7a1a';
-const GREEN = '#35c47c';
-const FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
-const dateFmt = new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'long' });
+export const SITE = 'hitfilan.mifarosa.com';
 
-const mmss = (sec) => {
-  const s = Math.max(0, Math.round(sec));
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-};
+const ACCENT = '#ff7a1a';
+const FONT = '"Arial Black", "Helvetica Neue", Impact, system-ui, sans-serif';
+const LEAN_LEFT = 0.2; // transparent pictures lean to the left
+const LEAN_RIGHT = -0.14; // classic sports italic for the card
+
+const upper = (s) => s.toLocaleUpperCase('tr-TR');
+const weekdayFmt = new Intl.DateTimeFormat('tr-TR', { weekday: 'long' });
+const dayFmt = new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'long' });
+
+let logoPromise = null;
+function loadLogo() {
+  if (!logoPromise) {
+    logoPromise = new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null); // the picture still works without the logo
+      img.src = 'icons/icon-512.png';
+    });
+  }
+  return logoPromise;
+}
 
 function makeCanvas(w, h) {
   const c = document.createElement('canvas');
@@ -36,161 +51,210 @@ function roundRectPath(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-// Shrinks the font until the text fits maxWidth.
-function fitText(ctx, text, maxWidth, size, weight) {
-  let s = size;
-  do {
-    ctx.font = `${weight} ${s}px ${FONT}`;
-    s -= 2;
-  } while (ctx.measureText(text).width > maxWidth && s > 16);
-}
-
-function checkBadge(ctx, cx, cy, r) {
-  ctx.fillStyle = GREEN;
+// Slanted block: the top edge is shifted by `lean` * height (positive = leans left).
+function slantPath(ctx, x, y, w, h, lean) {
+  const dx = lean * h;
   ctx.beginPath();
-  ctx.arc(cx, cy, r, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = '#0d1117';
-  ctx.lineWidth = r * 0.14;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.beginPath();
-  ctx.moveTo(cx - r * 0.38, cy + r * 0.02);
-  ctx.lineTo(cx - r * 0.1, cy + r * 0.3);
-  ctx.lineTo(cx + r * 0.42, cy - r * 0.28);
-  ctx.stroke();
+  ctx.moveTo(x - dx, y);
+  ctx.lineTo(x + w - dx, y);
+  ctx.lineTo(x + w, y + h);
+  ctx.lineTo(x, y + h);
+  ctx.closePath();
 }
 
-function stats(d) {
-  const out = [
-    { value: mmss(d.durationSec), label: 'süre' },
-    { value: `~${d.kcal}`, label: 'kcal' },
-    { value: dateFmt.format(new Date(d.date)), label: 'tarih' },
-  ];
-  return out;
-}
-
-function drawStats(ctx, d, cx, y, width, valueSize, labelSize, shadow) {
-  const items = stats(d);
-  const colW = width / items.length;
-  items.forEach((it, i) => {
-    const x = cx - width / 2 + colW * (i + 0.5);
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'alphabetic';
-    if (shadow) {
-      ctx.shadowColor = 'rgba(0,0,0,.65)';
-      ctx.shadowBlur = 14;
-      ctx.shadowOffsetY = 3;
-    }
-    ctx.fillStyle = '#fff';
-    fitText(ctx, it.value, colW - 16, valueSize, 800);
-    ctx.fillText(it.value, x, y);
-    ctx.fillStyle = shadow ? '#fff' : 'rgba(255,255,255,.62)';
-    ctx.font = `600 ${labelSize}px ${FONT}`;
-    ctx.fillText(it.label, x, y + labelSize + 14);
-    ctx.shadowColor = 'transparent';
-  });
-}
-
-function drawContent(ctx, d, cx, top, scale, shadow) {
-  const s = scale;
-  if (shadow) {
-    ctx.shadowColor = 'rgba(0,0,0,.65)';
-    ctx.shadowBlur = 18;
+function shadowOn(ctx, on, blur = 16) {
+  if (on) {
+    ctx.shadowColor = 'rgba(0,0,0,.7)';
+    ctx.shadowBlur = blur;
     ctx.shadowOffsetY = 4;
-  }
-  checkBadge(ctx, cx, top + 90 * s, 90 * s);
-  ctx.shadowColor = 'transparent';
-
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'alphabetic';
-  if (shadow) {
-    ctx.shadowColor = 'rgba(0,0,0,.65)';
-    ctx.shadowBlur = 14;
-    ctx.shadowOffsetY = 3;
-  }
-  ctx.fillStyle = '#fff';
-  ctx.font = `800 ${86 * s}px ${FONT}`;
-  ctx.fillText('Antrenman tamam!', cx, top + 280 * s);
-  ctx.fillStyle = ACCENT;
-  fitText(ctx, d.name, 900, 54 * s, 700);
-  ctx.fillText(d.name, cx, top + 360 * s);
-  ctx.shadowColor = 'transparent';
-
-  drawStats(ctx, d, cx, top + 540 * s, 960, 84 * s, 34 * s, shadow);
-
-  if (d.streak > 0) {
-    const text = `${d.streak} haftalık seri`;
-    ctx.font = `700 ${38 * s}px ${FONT}`;
-    const w = ctx.measureText(text).width + 70 * s;
-    const y = top + 690 * s;
-    ctx.fillStyle = 'rgba(255,122,26,.18)';
-    roundRectPath(ctx, cx - w / 2, y - 48 * s, w, 70 * s, 35 * s);
-    ctx.fill();
-    ctx.fillStyle = ACCENT;
-    ctx.fillText(text, cx, y);
+  } else {
+    ctx.shadowColor = 'transparent';
   }
 }
 
-function drawCard(d) {
+// Draws text skewed around its baseline; returns its width.
+function slantText(ctx, text, x, y, { size, color = '#fff', align = 'left', lean, shadow, maxWidth }) {
+  let s = size;
+  ctx.font = `900 ${s}px ${FONT}`;
+  while (maxWidth && ctx.measureText(text).width > maxWidth && s > 18) {
+    s -= 2;
+    ctx.font = `900 ${s}px ${FONT}`;
+  }
+  const w = ctx.measureText(text).width;
+  ctx.save();
+  shadowOn(ctx, shadow);
+  ctx.translate(x, y);
+  ctx.transform(1, 0, lean, 1, 0, 0);
+  ctx.textAlign = align;
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = color;
+  ctx.fillText(text, 0, 0);
+  ctx.restore();
+  return w;
+}
+
+function drawLogo(ctx, logo, x, y, size, shadow) {
+  ctx.save();
+  shadowOn(ctx, shadow, 14);
+  roundRectPath(ctx, x, y, size, size, size * 0.24);
+  if (logo) {
+    ctx.clip();
+    ctx.drawImage(logo, x, y, size, size);
+  } else {
+    ctx.fillStyle = ACCENT;
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function lines(d) {
+  const minutes = Math.max(1, Math.round(d.durationSec / 60));
+  const when = new Date(d.date);
+  return {
+    minutes,
+    day: upper(weekdayFmt.format(when)),
+    date: upper(dayFmt.format(when)),
+    hiit: d.hiit ? `HIIT · ${d.hiit.count} TUR · ${Math.max(1, Math.round(d.hiit.secs / 60))} DK` : '',
+  };
+}
+
+// The main composition, designed on a 1080x1080 box with its top-left at (0, 0).
+function drawComposition(ctx, d, logo, { lean, shadow }) {
+  const L = lines(d);
+  const cx = 540;
+
+  // Brand: logo + name, at the top
+  const brandSize = 92;
+  ctx.font = `900 ${brandSize}px ${FONT}`;
+  const wHit = ctx.measureText('HIT').width;
+  const wFilan = ctx.measureText('FILAN').width;
+  const logoSize = 128;
+  const total = logoSize + 28 + wHit + wFilan;
+  const x0 = cx - total / 2;
+  drawLogo(ctx, logo, x0, 40, logoSize, shadow);
+  slantText(ctx, 'HIT', x0 + logoSize + 28, 40 + logoSize * 0.74, { size: brandSize, lean, shadow });
+  slantText(ctx, 'FILAN', x0 + logoSize + 28 + wHit, 40 + logoSize * 0.74, { size: brandSize, color: ACCENT, lean, shadow });
+
+  // Tag
+  slantText(ctx, 'ANTRENMAN TAMAM', cx, 290, { size: 50, color: ACCENT, align: 'center', lean, shadow });
+
+  // Minutes: the hero number
+  ctx.font = `900 380px ${FONT}`;
+  const wNum = ctx.measureText(String(L.minutes)).width;
+  ctx.font = `900 120px ${FONT}`;
+  const wDk = ctx.measureText('DK').width;
+  const gap = 24;
+  const nx = cx - (wNum + gap + wDk) / 2;
+  slantText(ctx, String(L.minutes), nx, 600, { size: 380, lean, shadow });
+  slantText(ctx, 'DK', nx + wNum + gap, 600, { size: 120, color: ACCENT, lean, shadow });
+
+  // Day and date
+  slantText(ctx, `${L.day} · ${L.date}`, cx, 700, { size: 56, align: 'center', lean, shadow, maxWidth: 960 });
+
+  // HIIT amount in an accent block
+  if (L.hiit) {
+    ctx.font = `900 54px ${FONT}`;
+    const w = Math.min(960, ctx.measureText(L.hiit).width + 90);
+    ctx.save();
+    shadowOn(ctx, shadow, 10);
+    ctx.fillStyle = ACCENT;
+    slantPath(ctx, cx - w / 2, 750, w, 96, lean);
+    ctx.fill();
+    ctx.restore();
+    slantText(ctx, L.hiit, cx, 819, { size: 54, color: '#16110c', align: 'center', lean, maxWidth: w - 60 });
+  }
+
+  // Site
+  slantText(ctx, SITE, cx, 960, { size: 40, align: 'center', lean, shadow, color: 'rgba(255,255,255,.92)' });
+}
+
+function drawCard(d, logo) {
   const [c, ctx] = makeCanvas(1080, 1920);
   const g = ctx.createLinearGradient(0, 0, 0, 1920);
-  g.addColorStop(0, '#0d1117');
-  g.addColorStop(0.6, '#161b22');
-  g.addColorStop(1, '#2a1708');
+  g.addColorStop(0, '#0a0e13');
+  g.addColorStop(0.55, '#141b23');
+  g.addColorStop(1, '#25140a');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, 1080, 1920);
-  const glow = ctx.createRadialGradient(540, 1700, 40, 540, 1700, 760);
-  glow.addColorStop(0, 'rgba(255,122,26,.40)');
+
+  // Speed lines
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,.05)';
+  ctx.lineWidth = 3;
+  for (let i = 0; i < 16; i++) {
+    const y = 120 + i * 46;
+    ctx.beginPath();
+    ctx.moveTo(1080, y);
+    ctx.lineTo(1080 - (260 + (i % 4) * 140), y + 90);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Diagonal accent bands
+  ctx.fillStyle = 'rgba(255,122,26,.13)';
+  ctx.beginPath();
+  ctx.moveTo(0, 1560);
+  ctx.lineTo(1080, 1260);
+  ctx.lineTo(1080, 1420);
+  ctx.lineTo(0, 1720);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = ACCENT;
+  ctx.beginPath();
+  ctx.moveTo(0, 1740);
+  ctx.lineTo(1080, 1440);
+  ctx.lineTo(1080, 1470);
+  ctx.lineTo(0, 1770);
+  ctx.closePath();
+  ctx.fill();
+  const glow = ctx.createRadialGradient(540, 1800, 40, 540, 1800, 700);
+  glow.addColorStop(0, 'rgba(255,122,26,.35)');
   glow.addColorStop(1, 'rgba(255,122,26,0)');
   ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, 1080, 1920);
+  ctx.fillRect(0, 900, 1080, 1020);
 
-  drawContent(ctx, d, 540, 430, 1.1, false);
-
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#fff';
-  ctx.font = `800 64px ${FONT}`;
-  const w1 = ctx.measureText('Hit').width;
-  const w2 = ctx.measureText('Filan').width;
-  const x0 = 540 - (w1 + w2) / 2;
-  ctx.textAlign = 'left';
-  ctx.fillText('Hit', x0, 1780);
-  ctx.fillStyle = ACCENT;
-  ctx.fillText('Filan', x0 + w1, 1780);
+  ctx.save();
+  ctx.translate(0, 420);
+  drawComposition(ctx, d, logo, { lean: LEAN_RIGHT, shadow: false });
+  ctx.restore();
   return c;
 }
 
-function drawTransparent(d) {
+function drawTransparent(d, logo) {
   const [c, ctx] = makeCanvas(1080, 1080);
-  drawContent(ctx, d, 540, 110, 1, true);
+  drawComposition(ctx, d, logo, { lean: LEAN_LEFT, shadow: true });
   return c;
 }
 
-function drawStrip(d) {
-  const [c, ctx] = makeCanvas(1080, 180);
-  ctx.fillStyle = 'rgba(13,17,23,.82)';
-  roundRectPath(ctx, 6, 6, 1068, 168, 84);
+function drawStrip(d, logo) {
+  const [c, ctx] = makeCanvas(1080, 200);
+  const L = lines(d);
+  const lean = LEAN_LEFT;
+  ctx.fillStyle = 'rgba(13,17,23,.84)';
+  slantPath(ctx, 70, 12, 960, 176, lean);
   ctx.fill();
   ctx.strokeStyle = ACCENT;
-  ctx.lineWidth = 4;
+  ctx.lineWidth = 5;
   ctx.stroke();
-  checkBadge(ctx, 90, 90, 44);
-  const text = `${d.name} · ${mmss(d.durationSec)} · ~${d.kcal} kcal`;
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#fff';
-  fitText(ctx, text, 880, 58, 700);
-  ctx.fillText(text, 160, 92);
+  // accent edge on the left
+  ctx.fillStyle = ACCENT;
+  slantPath(ctx, 70, 12, 22, 176, lean);
+  ctx.fill();
+
+  drawLogo(ctx, logo, 120, 34, 84, false);
+  const parts = [`${L.minutes} DK`, L.day];
+  if (L.hiit) parts.push(`HIIT ${d.hiit.count} TUR`);
+  slantText(ctx, parts.join(' · '), 228, 96, { size: 58, lean, maxWidth: 770 });
+  slantText(ctx, `HITFILAN · ${SITE}`, 228, 160, { size: 30, color: ACCENT, lean, maxWidth: 770 });
   return c;
 }
 
-// d = { name, durationSec, kcal, date, streak }
 export async function renderShareCanvas(style, d) {
   try { await document.fonts?.ready; } catch { /* fonts API missing */ }
-  if (style === 'card') return drawCard(d);
-  if (style === 'strip') return drawStrip(d);
-  return drawTransparent(d);
+  const logo = await loadLogo();
+  if (style === 'card') return drawCard(d, logo);
+  if (style === 'strip') return drawStrip(d, logo);
+  return drawTransparent(d, logo);
 }
 
 export async function renderShareImage(style, d) {
