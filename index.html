@@ -24,32 +24,13 @@
   </header>
 
   <main>
-    <section id="view-home" class="view active" aria-label="Antrenmanlar">
+    <section id="view-home" class="view active" aria-label="Ana sayfa">
       <div id="resume-card" class="card resume" hidden></div>
       <div id="home-goals"></div>
-      <div id="home-nutrition"></div>
-      <div id="home-counter"></div>
       <div id="week-summary" class="card week"></div>
-
-      <div class="section-head">
-        <h2 class="section-title">Planlarım</h2>
-      </div>
-      <div id="plan-list" class="program-list"></div>
-
-      <h2 class="section-title">Kondisyon Bisikleti</h2>
-      <div id="bike-list" class="program-list"></div>
-
-      <h2 class="section-title">Kuvvet &amp; Yağ Yakım</h2>
-      <div id="circuit-list" class="program-list"></div>
-
-      <div class="card tip">
-        <h3>Haftalık öneri</h3>
-        <ul>
-          <li>Haftada 3 gün <b>Bisiklet Akışı</b>: yeni başlıyorsan 30 dk, alıştıkça 45 dk–1 saat.</li>
-          <li>Araya 2 gün <b>Dumbbell Yağ Yakıcı</b> ya da <b>Kısa Kuvvet</b>.</li>
-          <li>Enerjin varsa bisikletten sonra <b>Core Bitirici</b> ekle.</li>
-          <li>Kilo vermenin asıl anahtarı beslenme: hafif kalori açığı + yeterli protein.</li>
-        </ul>
+      <div class="home-pair">
+        <div id="home-nutrition"></div>
+        <div id="home-counter"></div>
       </div>
 
       <div class="coffee">
@@ -61,13 +42,50 @@
     </section>
 
     <section id="view-exercises" class="view" aria-label="Hareketler">
-      <div class="chips" id="exercise-filter" role="tablist">
-        <button class="chip active" data-filter="all">Tümü</button>
-        <button class="chip" data-filter="bodyweight">Vücut ağırlığı</button>
-        <button class="chip" data-filter="dumbbell">Dumbbell</button>
+      <div class="chips seg" id="ex-pane-tabs" role="tablist">
+        <button class="chip active" data-pane="suggest" role="tab">Öneriler</button>
+        <button class="chip" data-pane="plans" role="tab">Planlarım</button>
+        <button class="chip" data-pane="library" role="tab">Hareketler</button>
       </div>
-      <div id="exercise-list" class="exercise-list"></div>
-      <p class="fineprint credit">Hareket fotoğrafları: <a href="https://github.com/yuhonas/free-exercise-db" target="_blank" rel="noopener">free-exercise-db</a> (kamu malı).</p>
+
+      <div id="pane-suggest" class="ex-pane">
+        <h2 class="section-title">Kondisyon Bisikleti</h2>
+        <div id="bike-list" class="program-list"></div>
+
+        <h2 class="section-title">Kuvvet &amp; Yağ Yakım</h2>
+        <div id="circuit-list" class="program-list"></div>
+
+        <div class="card tip">
+          <h3>Haftalık öneri</h3>
+          <ul>
+            <li>Haftada 3 gün <b>Bisiklet Akışı</b>: yeni başlıyorsan 30 dk, alıştıkça 45 dk–1 saat.</li>
+            <li>Araya 2 gün <b>Dumbbell Yağ Yakıcı</b> ya da <b>Kısa Kuvvet</b>.</li>
+            <li>Enerjin varsa bisikletten sonra <b>Core Bitirici</b> ekle.</li>
+            <li>Kilo vermenin asıl anahtarı beslenme: hafif kalori açığı + yeterli protein.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div id="pane-plans" class="ex-pane" hidden>
+        <div id="plan-list" class="program-list"></div>
+      </div>
+
+      <div id="pane-library" class="ex-pane" hidden>
+        <div class="chips" id="exercise-filter" role="group" aria-label="Ekipman">
+          <button class="chip active" data-filter="all">Tümü</button>
+          <button class="chip" data-filter="bodyweight">Vücut ağırlığı</button>
+          <button class="chip" data-filter="dumbbell">Dumbbell</button>
+        </div>
+        <div class="chips" id="group-filter" role="group" aria-label="Bölge">
+          <button class="chip active" data-group="all">Hepsi</button>
+          <button class="chip" data-group="chest">Göğüs &amp; Üst vücut</button>
+          <button class="chip" data-group="core">Karın &amp; Core</button>
+          <button class="chip" data-group="lower">Kalça &amp; Bacak</button>
+          <button class="chip" data-group="other">Tüm vücut</button>
+        </div>
+        <div id="exercise-list" class="exercise-list"></div>
+        <p class="fineprint credit">Hareket fotoğrafları: <a href="https://github.com/yuhonas/free-exercise-db" target="_blank" rel="noopener">free-exercise-db</a> (kamu malı).</p>
+      </div>
     </section>
 
     <section id="view-history" class="view" aria-label="Takvim">
@@ -124,8 +142,12 @@
     </section>
 
     <section id="view-counter" class="view" aria-label="Serbest sayaç">
+      <div class="counter-top">
+        <button type="button" class="counter-iconbtn" id="counter-back" aria-label="Geri">‹</button>
+        <span class="counter-title">SERBEST SAYAÇ</span>
+        <span class="counter-sets" id="counter-sets">SET 0</span>
+      </div>
       <button type="button" class="counter-tap" id="counter-tap" aria-label="Bir artır">
-        <span class="counter-tag">SERBEST SAYAÇ</span>
         <span class="counter-ring">
           <svg viewBox="0 0 120 120" aria-hidden="true">
             <circle class="ring-bg" cx="60" cy="60" r="54"/>
@@ -136,13 +158,20 @@
             <small id="counter-sub">dokun ve say</small>
           </span>
         </span>
+        <span class="counter-done" id="counter-done" hidden>SET TAMAM ✓</span>
       </button>
+      <div class="counter-doses" id="counter-doses" role="group" aria-label="Doz"></div>
       <div class="counter-actions">
-        <button type="button" class="btn ghost" id="counter-dec" aria-label="Bir azalt">−1</button>
-        <button type="button" class="btn ghost" id="counter-reset">Sıfırla</button>
-        <button type="button" class="btn ghost" id="counter-target">Doz koy</button>
-        <button type="button" class="btn ghost" id="counter-back" aria-label="Geri">‹</button>
+        <button type="button" class="counter-btn" id="counter-dec" aria-label="Bir azalt">−1</button>
+        <button type="button" class="counter-btn" id="counter-reset">Sıfırla</button>
       </div>
+      <dialog id="counter-dose-dialog" class="sheet">
+        <form method="dialog" class="sheet-inner" id="counter-dose-form">
+          <h3>Kaç tekrar?</h3>
+          <input type="number" id="counter-dose-input" min="1" max="999" inputmode="numeric" aria-label="Doz">
+          <button type="submit" class="counter-btn primary">Tamam</button>
+        </form>
+      </dialog>
     </section>
 
     <section id="view-nutrition" class="view" aria-label="Beslenme">
@@ -194,11 +223,11 @@
           </select>
         </label>
         <label class="row">
-          <span>Günlük hareket düzeyi</span>
+          <span>Günlük hareket düzeyi<small>Hafif: haftada 1-3, orta: 3-5 antrenman</small></span>
           <select name="activity">
-            <option value="1.2">Çok az (masa başı)</option>
-            <option value="1.375">Hafif (haftada 1-3 antrenman)</option>
-            <option value="1.55">Orta (haftada 3-5 antrenman)</option>
+            <option value="1.2">Çok az</option>
+            <option value="1.375">Hafif</option>
+            <option value="1.55">Orta</option>
             <option value="1.725">Çok hareketli</option>
           </select>
         </label>
@@ -278,8 +307,8 @@
 
   <nav class="tabbar" aria-label="Menü">
     <button class="tab active" data-view="home">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="17" r="3.5"/><circle cx="18" cy="17" r="3.5"/><path d="M6 17l4-8h5l3 8M10 9l3 8M13 5h3"/></svg>
-      <span>Antrenman</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7M6 10v9h12v-9"/></svg>
+      <span>Ana sayfa</span>
     </button>
     <button class="tab" data-view="exercises">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10v4M6 7v10M18 7v10M21 10v4M6 12h12"/></svg>
@@ -309,9 +338,8 @@
     </header>
     <div class="editor-body">
       <input type="text" id="ed-name" class="ed-name" maxlength="40" placeholder="Plan adı (ör. Salı aralıkları)" aria-label="Plan adı">
-      <p class="ed-help">Planı bölümlerden kur. Her bölüm bir ya da birkaç adımdan oluşur ve istediğin kadar tur tekrar eder. Örnek: Isınma ×1 · Aralıklar ×10 (1 dk orta + 1 dk ağır) · Soğuma ×1.</p>
+      <p class="ed-help">Bir hareket seç, set, tekrar (ya da süre) ve ağırlığı gir. Hareketleri sürükleyerek ya da oklarla sırala; antrenmanda hareketler tek tek, sen hazır olunca ilerler.</p>
       <div id="ed-sections"></div>
-      <button type="button" class="btn ghost full" id="ed-add-section">+ Bölüm ekle</button>
     </div>
     <footer class="editor-foot">
       <div class="timeline" id="ed-timeline"></div>

@@ -392,8 +392,11 @@ sheet.addEventListener('click', (e) => {
 
 /* ---------- Exercises ---------- */
 
-function renderExercises(filter = 'all') {
-  const list = Object.entries(EXERCISES).filter(([, ex]) => filter === 'all' || ex.equip === filter);
+function renderExercises() {
+  const equip = $('#exercise-filter .chip.active').dataset.filter;
+  const group = $('#group-filter .chip.active').dataset.group;
+  const list = Object.entries(EXERCISES)
+    .filter(([, ex]) => (equip === 'all' || ex.equip === equip) && (group === 'all' || ex.group === group));
   $('#exercise-list').innerHTML = list.map(([id, ex]) => `
     <details class="card ex lib" data-ex="${id}">
       <summary>
@@ -418,9 +421,17 @@ $('#exercise-list').addEventListener('toggle', (e) => {
   if (slot) slot.innerHTML = visualHTML(slot.dataset.visual, 'full', esc(EXERCISES[slot.dataset.visual].name));
 }, true);
 
-$$('#exercise-filter .chip').forEach((c) => c.addEventListener('click', () => {
-  $$('#exercise-filter .chip').forEach((x) => x.classList.toggle('active', x === c));
-  renderExercises(c.dataset.filter);
+for (const sel of ['#exercise-filter', '#group-filter']) {
+  $$(`${sel} .chip`).forEach((c) => c.addEventListener('click', () => {
+    $$(`${sel} .chip`).forEach((x) => x.classList.toggle('active', x === c));
+    renderExercises();
+  }));
+}
+
+// Hareketler tab: suggestions, own plans, move library.
+$$('#ex-pane-tabs .chip').forEach((c) => c.addEventListener('click', () => {
+  $$('#ex-pane-tabs .chip').forEach((x) => x.classList.toggle('active', x === c));
+  $$('.ex-pane').forEach((p) => { p.hidden = p.id !== `pane-${c.dataset.pane}`; });
 }));
 
 /* ---------- History ---------- */
@@ -673,7 +684,7 @@ form.addEventListener('change', () => {
   settings = next;
   saveSettings(settings);
   renderHome();
-  renderExercises($('#exercise-filter .chip.active').dataset.filter);
+  renderExercises();
 });
 
 $('#test-sound').addEventListener('click', () => {
@@ -1126,9 +1137,11 @@ async function drawSharePreview() {
   });
   const canvas = await renderShareCanvas(shareStyle, shareData());
   $('#share-preview').replaceChildren(canvas);
-  $('#share-hint').textContent = shareStyle === 'card'
-    ? 'Instagram hikâyesi boyutunda (1080×1920).'
-    : 'Arkası saydam PNG: kendi fotoğrafının üstüne yapıştırabilirsin.';
+  $('#share-hint').textContent = {
+    card: 'Instagram hikâyesi boyutunda (1080×1920).',
+    story: '9:16 hikâye görseli (1080×1920). Ortadaki kare boş: fotoğrafı ya da müzik çıkartmasını Instagram’da oraya koyabilirsin.',
+    wide: '16:9 yatay görsel (1920×1080). Ortadaki kare boş: fotoğrafı ya da müzik çıkartmasını Instagram’da oraya koyabilirsin.',
+  }[shareStyle] || 'Arkası saydam PNG: kendi fotoğrafının üstüne yapıştırabilirsin.';
 }
 
 function openShare(entry) {
@@ -1287,9 +1300,13 @@ initPlans({
   weightKg: () => settings.weightKg,
   resistance: (level) => bikeTarget(level)?.res ?? '',
   defaultReps: () => settings.weightReps,
+  dumbbellKg: () => settings.dumbbellKg,
 });
 renderHomeGoals();
 initSync({ onStatus: renderSync, onRemoteChange: refreshFromStorage });
+
+// Phone-style portrait only; the lock works in installed/fullscreen contexts and is ignored elsewhere.
+try { screen.orientation?.lock?.('portrait')?.catch(() => {}); } catch { /* unsupported */ }
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   navigator.serviceWorker.register('sw.js').catch(() => {});

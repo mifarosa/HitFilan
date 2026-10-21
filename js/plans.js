@@ -1,13 +1,17 @@
 // User-built workout plans and their editor.
 //
-// Plan shape:
+// Plan shape (kept compatible with older plans and with cloud sync):
 //   { id, name, sections: [{ name, repeat, items: [Item] }] }
+// The editor works on one flat list of moves: older plans with several sections or
+// repeats are flattened when opened, and saved as a single section.
 // Item:
 //   { type: 'bike', level: 'easy'|'moderate'|'hard', dur }
-//   { type: 'exercise', exercise: <EXERCISES key>, dur }
+//   { type: 'exercise', exercise: <EXERCISES key>, dur | reps, sets?, kg?, rest? }
+//     sets: how many sets (default 1); reps: counted by hand, else dur seconds;
+//     kg: dumbbell weight; rest: seconds of rest between sets
 //   { type: 'rest', dur }
 //   { type: 'custom', name, level: 'work'|'rest', dur }
-import { EXERCISES, LEVELS, getProgram } from './data.js';
+import { EXERCISES, LEVELS, GROUPS, getProgram } from './data.js';
 import { loadPlans, savePlans } from './store.js';
 import { buildPlanSteps, totalSeconds, estimateKcal, formatTime } from './steps.js';
 import { visualHTML } from './visual.js';
@@ -20,13 +24,13 @@ const esc = (str) => String(str).replace(/[&<>"']/g, (c) => (
 
 const DEFAULT_DUR = { bike: 60, exercise: 40, rest: 20, custom: 30 };
 const BIKE_NAMES = { easy: 'Boşta', moderate: 'Orta', hard: 'Ağır' };
-const MAX_REPEAT = 50;
 
 let hooks = {
-  onChange() {}, onStart() {}, weightKg: () => 75, resistance: () => '', defaultReps: () => 12,
+  onChange() {}, onStart() {}, weightKg: () => 75, resistance: () => '', defaultReps: () => 12, dumbbellKg: () => 7.5,
 };
-let draft = null; // plan being edited
-let pickerSection = -1;
+let draft = null; // plan being edited: { id, name, items: [Item] }
+
+const kgText = (kg) => kg.toLocaleString('tr-TR');
 
 const newId = () => `plan_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
 const clone = (o) => JSON.parse(JSON.stringify(o));
@@ -110,23 +114,12 @@ function itemName(item) {
   return item.name;
 }
 
-// Exercises can be counted in reps (done by hand) or seconds (timed).
-function amountControlHTML(it) {
-  const mode = it.type === 'exercise' ? `
-    <div class="ed-mode" role="group" aria-label="Ölçü">
-      <button type="button" class="${it.reps ? 'active' : ''}" data-mode="reps">Tekrar</button>
-      <button type="button" class="${it.reps ? '' : 'active'}" data-mode="time">Süre</button>
-    </div>` : '';
-  const value = it.reps
-    ? `<button type="button" class="ed-dur-val" data-dur-edit aria-label="Tekrar sayısını yaz">${it.reps} tekrar</button>`
-    : `<button type="button" class="ed-dur-val" data-dur-edit aria-label="Süreyi yaz">${formatTime(it.dur)}</button>`;
-  return `
-    <div class="ed-dur">
-      <button type="button" data-dur="-1" aria-label="Azalt">−</button>
-      ${value}
-      <button type="button" data-dur="1" aria-label="Artır">+</button>
-      ${mode}
-    </div>`;
+// "3 × 12 · 7,5 kg" / "3 × 0:40" / "1:00" for a move.
+export function itemAmount(it) {
+  if (it.type !== 'exercise') return formatTime(it.dur);
+  const per = it.reps ? `${it.reps}` : formatTime(it.dur);
+  const sets = it.sets > 1 ? `${it.sets} × ${per}` : it.reps ? `${it.reps} tekrar` : per;
+  return it.kg > 0 ? `${sets} · ${kgText(it.kg)} kg` : sets;
 }
 
 function itemThumb(item) {
@@ -146,29 +139,12 @@ function itemLevel(item) {
 export function planRowsHTML(plan) {
   return plan.sections.filter((s) => s.items.length).map((s) => `
     <li class="plan-sec">
-      <div class="plan-sec-head"><b>${esc(s.name || 'Bölüm')}</b>${s.repeat > 1 ? `<span class="badge">${s.repeat} tur</span>` : ''}</div>
+      ${s.name || s.repeat > 1 ? `<div class="plan-sec-head"><b>${esc(s.name || 'Bölüm')}</b>${s.repeat > 1 ? `<span class="badge">${s.repeat} tur</span>` : ''}</div>` : ''}
       <ul class="plan-items">${s.items.map((it) => `
         <li><span class="dot" style="background:${LEVELS[itemLevel(it)].color}"></span>
-          <span>${esc(itemName(it))}</span><span class="when">${it.reps ? `${it.reps} tekrar` : formatTime(it.dur)}</span></li>`).join('')}
+          <span>${esc(itemName(it))}</span><span class="when">${itemAmount(it)}</span></li>`).join('')}
       </ul>
     </li>`).join('');
-}
-
-// Step for the duration buttons: finer for short steps.
-function durStep(dur, dir) {
-  if (dir < 0) return dur <= 60 ? 5 : dur <= 300 ? 15 : 60;
-  return dur < 60 ? 5 : dur < 300 ? 15 : 60;
-}
-
-function parseDuration(text) {
-  const t = text.trim().replace(',', '.');
-  if (/^\d+:\d{1,2}$/.test(t)) {
-    const [m, s] = t.split(':').map(Number);
-    return m * 60 + s;
-  }
-  if (/^\d+(\.\d+)?\s*(dk|d|m)$/i.test(t)) return Math.round(parseFloat(t) * 60);
-  if (/^\d+\s*(sn|s)?$/i.test(t)) return parseInt(t, 10);
-  return NaN;
 }
 
 /* ---------- Editor ---------- */
@@ -176,8 +152,17 @@ function parseDuration(text) {
 const editor = () => $('#editor');
 const picker = () => $('#step-picker');
 
+// Older plans: sections repeated `repeat` times become one flat list of moves.
+function flatten(plan) {
+  return plan.sections.flatMap((s) => Array.from({ length: Math.max(1, s.repeat || 1) }, () => clone(s.items))).flat();
+}
+
+const asPlan = (d) => ({ ...d, sections: [{ name: '', repeat: 1, items: d.items }] });
+
 export function openEditor(plan = null) {
-  draft = plan ? clone(plan) : { id: newId(), name: '', sections: [{ name: '', repeat: 1, items: [] }] };
+  draft = plan
+    ? { id: plan.id, name: plan.name, items: flatten(plan) }
+    : { id: newId(), name: '', items: [] };
   $('#ed-name').value = draft.name;
   $('#ed-title').textContent = plan && loadPlans().some((p) => p.id === plan.id) ? 'Planı düzenle' : 'Yeni plan';
   renderEditor();
@@ -193,12 +178,11 @@ function closeEditor() {
 }
 
 function draftSummary() {
-  const total = draft.sections.reduce((n, s) => n + s.items.length, 0);
-  if (!total) return { text: 'Henüz adım yok', steps: [] };
+  if (!draft.items.length) return { text: 'Henüz hareket yok', steps: [] };
   // Preview through the same expansion the runner uses.
-  const steps = buildPlanSteps(draft).slice(1);
+  const steps = buildPlanSteps(asPlan(draft)).slice(1);
   return {
-    text: `${Math.round(totalSeconds(steps) / 60)} dk · ${steps.length} adım · ~${estimateKcal(steps, hooks.weightKg())} kcal`,
+    text: `${draft.items.length} hareket · ${Math.round(totalSeconds(steps) / 60)} dk · ~${estimateKcal(steps, hooks.weightKg())} kcal`,
     steps,
   };
 }
@@ -213,45 +197,30 @@ function renderSummary() {
   $('#ed-start').disabled = empty;
 }
 
-function sectionHTML(s, si) {
-  const last = si === draft.sections.length - 1;
+function rowHTML(it, ii) {
+  const last = ii === draft.items.length - 1;
   return `
-    <section class="ed-sec" data-si="${si}">
-      <div class="ed-sec-head">
-        <input class="ed-sec-name" value="${esc(s.name)}" placeholder="Bölüm adı (ör. Isınma)" maxlength="30" aria-label="Bölüm adı">
-        <div class="ed-tools">
-          <button type="button" class="mini" data-sec-act="up" ${si === 0 ? 'disabled' : ''} aria-label="Bölümü yukarı taşı">↑</button>
-          <button type="button" class="mini" data-sec-act="down" ${last ? 'disabled' : ''} aria-label="Bölümü aşağı taşı">↓</button>
-          <button type="button" class="mini danger" data-sec-act="del" aria-label="Bölümü sil">✕</button>
-        </div>
+    <li class="ed-row" data-ii="${ii}">
+      <button type="button" class="ed-drag" aria-label="Sürükleyerek sırala">⠿</button>
+      ${itemThumb(it)}
+      <button type="button" class="ed-row-main" data-edit aria-label="Düzenle">
+        <b>${esc(itemName(it))}</b>
+        <small>${itemAmount(it)}${it.type === 'exercise' && it.sets > 1 && it.rest ? ` · ${it.rest} sn dinlenme` : ''}</small>
+      </button>
+      <div class="ed-tools">
+        <button type="button" class="mini" data-act="up" ${ii === 0 ? 'disabled' : ''} aria-label="Yukarı taşı">↑</button>
+        <button type="button" class="mini" data-act="down" ${last ? 'disabled' : ''} aria-label="Aşağı taşı">↓</button>
+        <button type="button" class="mini" data-act="copy" aria-label="Kopyala">⧉</button>
+        <button type="button" class="mini danger" data-act="del" aria-label="Sil">✕</button>
       </div>
-      <div class="ed-repeat">
-        <span>Tur sayısı</span>
-        <div class="stepper-ctrl">
-          <button type="button" data-rep="-1" aria-label="Tur azalt">−</button>
-          <output>${s.repeat}</output>
-          <button type="button" data-rep="1" aria-label="Tur artır">+</button>
-        </div>
-        <small>${s.repeat > 1 ? 'Bu bölümdeki adımlar sırayla tekrar eder' : 'Bir kez yapılır'}</small>
-      </div>
-      <ol class="ed-items">${s.items.map((it, ii) => `
-        <li class="ed-item" data-ii="${ii}">
-          ${itemThumb(it)}
-          <span class="ed-item-name">${esc(itemName(it))}</span>
-          ${amountControlHTML(it)}
-          <div class="ed-tools">
-            <button type="button" class="mini" data-item-act="up" ${ii === 0 ? 'disabled' : ''} aria-label="Yukarı taşı">↑</button>
-            <button type="button" class="mini" data-item-act="down" ${ii === s.items.length - 1 ? 'disabled' : ''} aria-label="Aşağı taşı">↓</button>
-            <button type="button" class="mini danger" data-item-act="del" aria-label="Adımı sil">✕</button>
-          </div>
-        </li>`).join('')}
-      </ol>
-      <button type="button" class="btn ghost full ed-add" data-add-step>+ Adım ekle</button>
-    </section>`;
+    </li>`;
 }
 
 function renderEditor() {
-  $('#ed-sections').innerHTML = draft.sections.map(sectionHTML).join('');
+  $('#ed-sections').innerHTML = `
+    <ol class="ed-items ed-flat" id="ed-list">${draft.items.map(rowHTML).join('')}</ol>
+    ${draft.items.length ? '' : '<p class="empty">Henüz hareket yok. Aşağıdan bir hareket seç, set, tekrar ve ağırlığı gir.</p>'}
+    <button type="button" class="btn primary full ed-add" id="ed-add-move">+ Hareket ekle</button>`;
   bindEditor();
   renderSummary();
 }
@@ -261,83 +230,70 @@ function swap(arr, i, j) {
 }
 
 function bindEditor() {
-  $$('.ed-sec', editor()).forEach((secEl) => {
-    const si = +secEl.dataset.si;
-    const sec = draft.sections[si];
-
-    $('.ed-sec-name', secEl).addEventListener('input', (e) => {
-      sec.name = e.target.value;
-      renderSummary();
-    });
-
-    $$('[data-sec-act]', secEl).forEach((b) => b.addEventListener('click', () => {
-      const act = b.dataset.secAct;
-      if (act === 'up') swap(draft.sections, si, si - 1);
-      if (act === 'down') swap(draft.sections, si, si + 1);
-      if (act === 'del') {
-        if (sec.items.length && !confirm('Bu bölüm ve adımları silinsin mi?')) return;
-        draft.sections.splice(si, 1);
-        if (!draft.sections.length) draft.sections.push({ name: '', repeat: 1, items: [] });
-      }
+  $('#ed-add-move').addEventListener('click', () => {
+    pickGroup = 'all'; // a fresh picker starts unfiltered
+    openPicker();
+  });
+  $$('#ed-list .ed-row').forEach((row) => {
+    const ii = +row.dataset.ii;
+    $('[data-edit]', row).addEventListener('click', () => openForm(draft.items[ii], false, (item) => {
+      draft.items[ii] = item;
       renderEditor();
     }));
-
-    $$('[data-rep]', secEl).forEach((b) => b.addEventListener('click', () => {
-      sec.repeat = Math.min(MAX_REPEAT, Math.max(1, sec.repeat + +b.dataset.rep));
+    $$('[data-act]', row).forEach((b) => b.addEventListener('click', () => {
+      const act = b.dataset.act;
+      if (act === 'up') swap(draft.items, ii, ii - 1);
+      if (act === 'down') swap(draft.items, ii, ii + 1);
+      if (act === 'copy') draft.items.splice(ii + 1, 0, clone(draft.items[ii]));
+      if (act === 'del') draft.items.splice(ii, 1);
       renderEditor();
     }));
-
-    $$('.ed-item', secEl).forEach((row) => {
-      const ii = +row.dataset.ii;
-      const item = sec.items[ii];
-      $$('[data-dur]', row).forEach((b) => b.addEventListener('click', () => {
-        const dir = +b.dataset.dur;
-        if (item.reps) item.reps = Math.min(100, Math.max(1, item.reps + dir));
-        else item.dur = Math.min(3600, Math.max(5, item.dur + dir * durStep(item.dur, dir)));
-        renderEditor();
-      }));
-      $$('[data-mode]', row).forEach((b) => b.addEventListener('click', () => {
-        if (b.dataset.mode === 'reps') item.reps = item.reps || hooks.defaultReps() || 12;
-        else delete item.reps;
-        renderEditor();
-      }));
-      $('[data-dur-edit]', row).addEventListener('click', () => {
-        if (item.reps) {
-          const raw = prompt('Kaç tekrar?', String(item.reps));
-          if (raw === null) return;
-          const n = parseInt(raw, 10);
-          if (!Number.isFinite(n) || n < 1 || n > 100) {
-            alert('Tekrar sayısı 1 ile 100 arasında olmalı.');
-            return;
-          }
-          item.reps = n;
-          renderEditor();
-          return;
-        }
-        const raw = prompt('Süre (ör. 45, 1:30 ya da 5 dk):', formatTime(item.dur));
-        if (raw === null) return;
-        const secs = parseDuration(raw);
-        if (!Number.isFinite(secs) || secs < 5 || secs > 3600) {
-          alert('Süre 5 saniye ile 60 dakika arasında olmalı.');
-          return;
-        }
-        item.dur = secs;
-        renderEditor();
-      });
-      $$('[data-item-act]', row).forEach((b) => b.addEventListener('click', () => {
-        const act = b.dataset.itemAct;
-        if (act === 'up') swap(sec.items, ii, ii - 1);
-        if (act === 'down') swap(sec.items, ii, ii + 1);
-        if (act === 'del') sec.items.splice(ii, 1);
-        renderEditor();
-      }));
-    });
-
-    $('[data-add-step]', secEl).addEventListener('click', () => openPicker(si));
+    bindDrag(row);
   });
 }
 
-/* ---------- Step picker ---------- */
+// Drag a row by its handle. Rows stay in place while dragging (moving the dragged
+// element would drop the pointer capture); the row under the pointer shows where it
+// will land, and the list is reordered on release.
+function bindDrag(row) {
+  const handle = $('.ed-drag', row);
+  handle.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    handle.setPointerCapture(e.pointerId);
+    row.classList.add('dragging');
+    const list = row.parentElement;
+    const from = +row.dataset.ii;
+    let drop = null; // { index, after }
+    const mark = () => $$('.ed-row', list).forEach((r) => {
+      r.classList.toggle('drop-before', !!drop && +r.dataset.ii === drop.index && !drop.after);
+      r.classList.toggle('drop-after', !!drop && +r.dataset.ii === drop.index && drop.after);
+    });
+    const move = (ev) => {
+      const over = document.elementFromPoint(ev.clientX, ev.clientY)?.closest('.ed-row');
+      if (!over || over.parentElement !== list || over === row) return;
+      const r = over.getBoundingClientRect();
+      drop = { index: +over.dataset.ii, after: ev.clientY >= r.top + r.height / 2 };
+      mark();
+    };
+    const end = () => {
+      handle.removeEventListener('pointermove', move);
+      handle.removeEventListener('pointerup', end);
+      handle.removeEventListener('pointercancel', end);
+      if (drop) {
+        const [item] = draft.items.splice(from, 1);
+        let to = drop.index + (drop.after ? 1 : 0);
+        if (from < to) to -= 1;
+        draft.items.splice(to, 0, item);
+      }
+      renderEditor();
+    };
+    handle.addEventListener('pointermove', move);
+    handle.addEventListener('pointerup', end);
+    handle.addEventListener('pointercancel', end);
+  });
+}
+
+/* ---------- Move picker and the quick form ---------- */
 
 const PICK_TABS = [
   { id: 'dumbbell', label: 'Dumbbell' },
@@ -346,18 +302,28 @@ const PICK_TABS = [
   { id: 'other', label: 'Dinlenme / Diğer' },
 ];
 let pickTab = 'dumbbell';
+let pickGroup = 'all';
 
 function exerciseCards(equip) {
-  return Object.entries(EXERCISES).filter(([, ex]) => ex.equip === equip).map(([id, ex]) => `
+  return Object.entries(EXERCISES)
+    .filter(([, ex]) => ex.equip === equip && (pickGroup === 'all' || ex.group === pickGroup))
+    .map(([id, ex]) => `
     <button type="button" class="pick-card" data-ex="${id}">
       ${visualHTML(id, 'thumb', esc(ex.name))}
       <span class="pick-card-text"><b>${esc(ex.name)}</b><small>${esc(ex.target)}</small></span>
     </button>`).join('');
 }
 
+function groupChips() {
+  return `<div class="chips pick-groups" role="group" aria-label="Bölge">
+    ${[{ id: 'all', label: 'Hepsi' }, ...GROUPS].map((g) => `<button type="button" class="chip ${g.id === pickGroup ? 'active' : ''}" data-group="${g.id}">${g.label}</button>`).join('')}
+  </div>`;
+}
+
 function pickTabHTML(tab) {
   if (tab === 'dumbbell' || tab === 'bodyweight') {
-    return `<div class="pick-grid">${exerciseCards(tab)}</div>`;
+    const cards = exerciseCards(tab);
+    return `${groupChips()}<div class="pick-grid">${cards || '<p class="empty">Bu bölgede hareket yok.</p>'}</div>`;
   }
   if (tab === 'bike') {
     return `
@@ -384,16 +350,31 @@ function pickTabHTML(tab) {
     </div>`;
 }
 
-function openPicker(si) {
-  pickerSection = si;
+function defaultItem(id) {
+  const ex = EXERCISES[id];
+  const item = { type: 'exercise', exercise: id, dur: DEFAULT_DUR.exercise, sets: 3, rest: 45 };
+  if (ex.equip === 'dumbbell') {
+    item.reps = hooks.defaultReps() || 12;
+    item.kg = hooks.dumbbellKg();
+  }
+  return item;
+}
+
+function sheetHead(title, back) {
+  return `
+    <div class="sheet-head">
+      ${back ? '<button type="button" class="btn ghost" id="form-back">‹ Geri</button>' : ''}
+      <h2>${esc(title)}</h2>
+      <button class="icon-btn" value="cancel" aria-label="Kapat">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>`;
+}
+
+function openPicker() {
   picker().innerHTML = `
     <form method="dialog" class="sheet-inner">
-      <div class="sheet-head">
-        <h2>Adım ekle</h2>
-        <button class="icon-btn" value="cancel" aria-label="Kapat">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
-        </button>
-      </div>
+      ${sheetHead('Hareket ekle')}
       <div class="chips pick-tabs" role="tablist">
         ${PICK_TABS.map((t) => `<button type="button" class="chip ${t.id === pickTab ? 'active' : ''}" role="tab" data-tab="${t.id}">${t.label}</button>`).join('')}
       </div>
@@ -401,12 +382,10 @@ function openPicker(si) {
     </form>`;
 
   const add = (item) => {
-    draft.sections[pickerSection].items.push(item);
+    draft.items.push(item);
     picker().close();
     renderEditor();
-    // Keep the new step in view.
-    const rows = $$(`.ed-sec[data-si="${pickerSection}"] .ed-item`, editor());
-    rows[rows.length - 1]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    $$('#ed-list .ed-row').at(-1)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
   };
 
   const showTab = (tab) => {
@@ -414,14 +393,14 @@ function openPicker(si) {
     $$('[data-tab]', picker()).forEach((c) => c.classList.toggle('active', c.dataset.tab === tab));
     const body = $('#pick-body', picker());
     body.innerHTML = pickTabHTML(tab);
-    $$('[data-bike]', body).forEach((b) => b.addEventListener('click', () => add({ type: 'bike', level: b.dataset.bike, dur: DEFAULT_DUR.bike })));
-    $('[data-rest]', body)?.addEventListener('click', () => add({ type: 'rest', dur: DEFAULT_DUR.rest }));
-    // Weight moves default to reps (done by hand); bodyweight moves to seconds.
-    $$('[data-ex]', body).forEach((b) => b.addEventListener('click', () => {
-      const item = { type: 'exercise', exercise: b.dataset.ex, dur: DEFAULT_DUR.exercise };
-      if (EXERCISES[b.dataset.ex].equip === 'dumbbell') item.reps = hooks.defaultReps() || 12;
-      add(item);
+    $$('[data-group]', body).forEach((c) => c.addEventListener('click', () => {
+      pickGroup = c.dataset.group;
+      showTab(tab);
     }));
+    $$('[data-bike]', body).forEach((b) => b.addEventListener('click', () => openForm({ type: 'bike', level: b.dataset.bike, dur: DEFAULT_DUR.bike }, true, add, openPicker)));
+    $('[data-rest]', body)?.addEventListener('click', () => openForm({ type: 'rest', dur: DEFAULT_DUR.rest }, true, add, openPicker));
+    // Tapping a move opens the quick form with sensible defaults.
+    $$('[data-ex]', body).forEach((b) => b.addEventListener('click', () => openForm(defaultItem(b.dataset.ex), true, add, openPicker)));
     let kind = 'work';
     $$('[data-kind]', body).forEach((c) => c.addEventListener('click', () => {
       kind = c.dataset.kind;
@@ -439,30 +418,102 @@ function openPicker(si) {
 
   $$('[data-tab]', picker()).forEach((c) => c.addEventListener('click', () => showTab(c.dataset.tab)));
   showTab(pickTab);
-  picker().showModal();
+  if (!picker().open) picker().showModal();
+}
+
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+// One small form per move: sets, reps or seconds, kg, rest between sets.
+// `onSave(item)` gets the finished item; `back()` returns to the list (new moves only).
+function openForm(source, isNew, onSave, back) {
+  const f = clone(source);
+  const isEx = f.type === 'exercise';
+  const dumbbell = isEx && EXERCISES[f.exercise].equip === 'dumbbell';
+
+  const stepper = (key, label, hint = '') => `
+    <div class="form-row" data-row="${key}">
+      <span>${label}${hint ? `<small>${hint}</small>` : ''}</span>
+      <div class="stepper-ctrl">
+        <button type="button" data-step="${key}:-1" aria-label="${label} azalt">−</button>
+        <input type="number" inputmode="decimal" data-field="${key}" aria-label="${label}">
+        <button type="button" data-step="${key}:1" aria-label="${label} artır">+</button>
+      </div>
+    </div>`;
+
+  const render = () => {
+    const mode = f.reps ? 'reps' : 'time';
+    picker().innerHTML = `
+      <form method="dialog" class="sheet-inner move-form">
+        ${sheetHead(itemName(f), isNew && !!back)}
+        ${isEx ? visualHTML(f.exercise, 'full', esc(itemName(f))) : ''}
+        ${isEx ? stepper('sets', 'Set sayısı') : ''}
+        ${isEx ? `<div class="form-row"><span>Ölçü</span>
+          <div class="ed-mode" role="group" aria-label="Ölçü">
+            <button type="button" class="${mode === 'reps' ? 'active' : ''}" data-mode="reps">Tekrar</button>
+            <button type="button" class="${mode === 'time' ? 'active' : ''}" data-mode="time">Süre</button>
+          </div></div>` : ''}
+        ${isEx && mode === 'reps' ? stepper('reps', 'Tekrar', 'her sette') : stepper('dur', 'Süre (sn)', isEx ? 'her sette' : '')}
+        ${dumbbell ? stepper('kg', 'Ağırlık (kg)') : ''}
+        ${isEx && f.sets > 1 ? stepper('rest', 'Setler arası dinlenme (sn)', '0 = dinlenme yok') : ''}
+        <button type="submit" class="btn primary full" id="form-save">${isNew ? 'Ekle' : 'Kaydet'}</button>
+      </form>`;
+    $$('[data-field]', picker()).forEach((input) => {
+      input.value = f[input.dataset.field] ?? 0;
+      input.addEventListener('input', () => {
+        f[input.dataset.field] = +input.value || 0;
+        if (input.dataset.field === 'sets' && (f.sets > 1) !== (+source.sets > 1)) { /* rest row toggles on change */ }
+      });
+      input.addEventListener('change', () => { normalize(); render(); });
+    });
+    $$('[data-step]', picker()).forEach((b) => b.addEventListener('click', () => {
+      const [key, dir] = b.dataset.step.split(':');
+      const step = { sets: 1, reps: 1, kg: 2.5, rest: 15, dur: f.dur < 60 ? 5 : 15 }[key];
+      f[key] = (f[key] || 0) + step * +dir;
+      normalize();
+      render();
+    }));
+    $$('[data-mode]', picker()).forEach((b) => b.addEventListener('click', () => {
+      if (b.dataset.mode === 'reps') f.reps = f.reps || hooks.defaultReps() || 12;
+      else delete f.reps;
+      render();
+    }));
+    $('#form-back', picker())?.addEventListener('click', () => back());
+    $('.move-form', picker()).addEventListener('submit', (e) => {
+      e.preventDefault();
+      normalize();
+      picker().close();
+      onSave(f);
+    });
+  };
+
+  const normalize = () => {
+    if (isEx) {
+      f.sets = clamp(Math.round(f.sets || 1), 1, 12);
+      f.rest = clamp(Math.round(f.rest || 0), 0, 300);
+      if (f.reps) f.reps = clamp(Math.round(f.reps), 1, 100);
+      if (dumbbell) f.kg = clamp(Math.round((f.kg || 0) * 2) / 2, 0, 100);
+    }
+    f.dur = clamp(Math.round(f.dur || DEFAULT_DUR[f.type] || 30), 5, 3600);
+  };
+
+  render();
+  if (!picker().open) picker().showModal();
 }
 
 /* ---------- Wiring ---------- */
 
 function commit() {
   draft.name = $('#ed-name').value.trim() || 'Planım';
-  draft.sections = draft.sections
-    .filter((s) => s.items.length)
-    .map((s) => ({ ...s, name: s.name.trim() }));
-  upsertPlan(draft);
-  return draft.id;
+  const plan = { id: draft.id, name: draft.name, sections: [{ name: '', repeat: 1, items: draft.items }] };
+  upsertPlan(plan);
+  return plan.id;
 }
 
 export function initPlans(h) {
   hooks = { ...hooks, ...h };
   $('#ed-name').addEventListener('input', () => renderSummary());
-  $('#ed-add-section').addEventListener('click', () => {
-    draft.sections.push({ name: '', repeat: 1, items: [] });
-    renderEditor();
-    $$('.ed-sec', editor()).at(-1)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-  });
   $('#ed-cancel').addEventListener('click', () => {
-    if (draft.sections.some((s) => s.items.length) && !confirm('Değişiklikler kaydedilmeden çıkılsın mı?')) return;
+    if (draft.items.length && !confirm('Değişiklikler kaydedilmeden çıkılsın mı?')) return;
     closeEditor();
   });
   $('#ed-save').addEventListener('click', () => {

@@ -90,6 +90,32 @@ function prepStep(label, hint, dur = PREP_SECONDS) {
 // Default names for bike levels inside user plans.
 const BIKE_NAMES = { easy: 'Boşta pedal', moderate: 'Orta tempo', hard: 'Ağır tempo' };
 
+const kgLabel = (kg) => `${kg.toLocaleString('tr-TR')} kg`;
+
+// One exercise item: `sets` sets, rest steps between them. Rep sets wait for the
+// user (open steps); timed sets run on the clock.
+function exerciseSteps(item) {
+  const ex = EXERCISES[item.exercise];
+  const sets = Math.max(1, item.sets || 1);
+  const out = [];
+  for (let n = 1; n <= sets; n++) {
+    const parts = [];
+    if (sets > 1) parts.push(`Set ${n}/${sets}`);
+    else if (!item.reps) parts.push('Çalış');
+    if (item.kg > 0) parts.push(kgLabel(item.kg));
+    const tag = parts.join(' · ') || `${item.reps} tekrar`;
+    const step = item.reps
+      ? repStep(item.exercise, item.reps, tag)
+      : { label: ex.name, level: 'work', tag, hint: ex.how, exercise: item.exercise, dur: item.dur };
+    out.push(step);
+    if (n < sets && item.rest > 0) {
+      out.push({ label: 'Dinlen', level: 'rest', tag: `Set ${n}/${sets} sonrası`, hint: LEVELS.rest.hint, dur: item.rest });
+    }
+  }
+  return out;
+}
+
+// Returns one step, or several for an exercise with sets.
 function planItemStep(item, section) {
   const single = section.items.length === 1 && section.name;
   if (item.type === 'bike') {
@@ -101,11 +127,7 @@ function planItemStep(item, section) {
       dur: item.dur,
     };
   }
-  if (item.type === 'exercise') {
-    if (item.reps) return repStep(item.exercise, item.reps, `${item.reps} tekrar`);
-    const ex = EXERCISES[item.exercise];
-    return { label: ex.name, level: 'work', tag: 'Çalış', hint: ex.how, exercise: item.exercise, dur: item.dur };
-  }
+  if (item.type === 'exercise') return exerciseSteps(item);
   if (item.type === 'rest') {
     return { label: item.name || 'Dinlen', level: 'rest', tag: 'Dinlen', hint: LEVELS.rest.hint, dur: item.dur };
   }
@@ -121,10 +143,11 @@ function planSteps(plan) {
     const n = Math.max(1, section.repeat || 1);
     for (let r = 1; r <= n; r++) {
       for (const item of section.items) {
-        const s = planItemStep(item, section);
-        if (n > 1) s.tag = `${section.name || 'Tur'} ${r}/${n} · ${s.tag}`;
-        else if (section.name && s.label !== section.name) s.tag = `${section.name} · ${s.tag}`;
-        steps.push(s);
+        for (const s of [].concat(planItemStep(item, section))) {
+          if (n > 1) s.tag = `${section.name || 'Tur'} ${r}/${n} · ${s.tag}`;
+          else if (section.name && s.label !== section.name) s.tag = `${section.name} · ${s.tag}`;
+          steps.push(s);
+        }
       }
     }
   }

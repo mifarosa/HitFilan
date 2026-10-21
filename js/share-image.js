@@ -2,10 +2,15 @@
 // exported as PNG. Three styles:
 //   card         1080x1920 story with a sporty background
 //   transparent  1080x1080, no background (a sticker over the user's own photo)
-//   strip        1080x200 one-line slanted pill, transparent around it
+//   story        1080x1920 (9:16) with an empty square in the middle, same idea as wide
+//   wide         1920x1080 (16:9) with an empty square in the middle for the user's
+//                own photo or Instagram's music sticker
+//   strip        1080x200 one-line pill, transparent around it
 // Input: { name, durationSec, date, hiit: { count, secs } | null }
 export const SHARE_STYLES = [
   { id: 'card', label: 'Arka planlı' },
+  { id: 'story', label: '9:16' },
+  { id: 'wide', label: '16:9' },
   { id: 'transparent', label: 'Saydam' },
   { id: 'strip', label: 'Çizgi' },
 ];
@@ -222,6 +227,160 @@ function drawCard(d, logo) {
   return c;
 }
 
+// 9:16 picture. The centre square (x 160-920, y 380-1140) stays empty for the user's
+// photo or music sticker; text sits above and below it, inside Instagram's safe zones.
+function drawStory(d, logo) {
+  const W = 1080;
+  const H = 1920;
+  const [c, ctx] = makeCanvas(W, H);
+  const L = lines(d);
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#0a0e13');
+  g.addColorStop(0.55, '#141b23');
+  g.addColorStop(1, '#25140a');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  // Speed lines top-right and an accent band along the bottom, both outside the square
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,.05)';
+  ctx.lineWidth = 3;
+  for (let i = 0; i < 8; i++) {
+    const y = 40 + i * 34;
+    ctx.beginPath();
+    ctx.moveTo(W, y);
+    ctx.lineTo(W - (220 + (i % 4) * 90), y + 70);
+    ctx.stroke();
+  }
+  ctx.restore();
+  const glow = ctx.createRadialGradient(W / 2, H + 80, 40, W / 2, H + 80, 560);
+  glow.addColorStop(0, 'rgba(255,122,26,.30)');
+  glow.addColorStop(1, 'rgba(255,122,26,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = 'rgba(255,122,26,.13)';
+  ctx.beginPath();
+  ctx.moveTo(0, 1790);
+  ctx.lineTo(W, 1730);
+  ctx.lineTo(W, 1790);
+  ctx.lineTo(0, 1850);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = ACCENT;
+  ctx.beginPath();
+  ctx.moveTo(0, 1880);
+  ctx.lineTo(W, 1820);
+  ctx.lineTo(W, 1834);
+  ctx.lineTo(0, 1894);
+  ctx.closePath();
+  ctx.fill();
+
+  // Above the square: brand and tag
+  const cx = W / 2;
+  ctx.font = `900 72px ${FONT}`;
+  const wHit = ctx.measureText('HIT').width;
+  const wFilan = ctx.measureText('FILAN').width;
+  const logoSize = 100;
+  const x0 = cx - (logoSize + 24 + wHit + wFilan) / 2;
+  drawLogo(ctx, logo, x0, 120, logoSize, false);
+  slantText(ctx, 'HIT', x0 + logoSize + 24, 120 + logoSize * 0.74, { size: 72, lean: 0 });
+  slantText(ctx, 'FILAN', x0 + logoSize + 24 + wHit, 120 + logoSize * 0.74, { size: 72, color: ACCENT, lean: 0 });
+  slantText(ctx, 'ANTRENMAN TAMAM', cx, 310, { size: 40, color: ACCENT, align: 'center', lean: 0 });
+
+  // Below the square: minutes, day, HIIT, site
+  ctx.font = `900 260px ${FONT}`;
+  const wNum = ctx.measureText(String(L.minutes)).width;
+  ctx.font = `900 90px ${FONT}`;
+  const wDk = ctx.measureText('DK').width;
+  const nx = cx - (wNum + 20 + wDk) / 2;
+  slantText(ctx, String(L.minutes), nx, 1390, { size: 260, lean: 0 });
+  slantText(ctx, 'DK', nx + wNum + 20, 1390, { size: 90, color: ACCENT, lean: 0 });
+  slantText(ctx, `${L.day} · ${L.date}`, cx, 1470, { size: 52, align: 'center', lean: 0, maxWidth: 940 });
+  if (L.hiit) {
+    ctx.font = `900 46px ${FONT}`;
+    const w = Math.min(900, ctx.measureText(L.hiit).width + 90);
+    ctx.fillStyle = ACCENT;
+    ctx.fillRect(cx - w / 2, 1520, w, 84);
+    slantText(ctx, L.hiit, cx, 1578, { size: 46, color: '#16110c', align: 'center', lean: 0, maxWidth: w - 50 });
+  }
+  slantText(ctx, SITE, cx, 1665, { size: 34, align: 'center', lean: 0, color: 'rgba(255,255,255,.9)' });
+  return c;
+}
+
+// 16:9 picture. The centre square (x 600-1320, y 180-900) stays empty: no text and no
+// shapes, so the user can place a photo or the music sticker there in Instagram.
+function drawWide(d, logo) {
+  const W = 1920;
+  const H = 1080;
+  const [c, ctx] = makeCanvas(W, H);
+  const L = lines(d);
+  const g = ctx.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, '#0a0e13');
+  g.addColorStop(0.55, '#141b23');
+  g.addColorStop(1, '#25140a');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  // Speed lines in the top-right corner, outside the empty square
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,.05)';
+  ctx.lineWidth = 3;
+  for (let i = 0; i < 10; i++) {
+    const y = 40 + i * 38;
+    ctx.beginPath();
+    ctx.moveTo(W, y);
+    ctx.lineTo(W - (200 + (i % 4) * 90), y + 70);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Glow and accent bands along the bottom, below the square
+  const glow = ctx.createRadialGradient(W / 2, H + 60, 40, W / 2, H + 60, 520);
+  glow.addColorStop(0, 'rgba(255,122,26,.30)');
+  glow.addColorStop(1, 'rgba(255,122,26,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = 'rgba(255,122,26,.13)';
+  ctx.beginPath();
+  ctx.moveTo(0, 1000);
+  ctx.lineTo(W, 930);
+  ctx.lineTo(W, 990);
+  ctx.lineTo(0, 1060);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = ACCENT;
+  ctx.beginPath();
+  ctx.moveTo(0, 1066);
+  ctx.lineTo(W, 996);
+  ctx.lineTo(W, 1010);
+  ctx.lineTo(0, 1080);
+  ctx.closePath();
+  ctx.fill();
+
+  // Left column: brand, tag, minutes
+  const lx = 320;
+  drawLogo(ctx, logo, lx - 55, 150, 110, false);
+  slantText(ctx, 'HIT', lx, 330, { size: 64, align: 'right', lean: 0 });
+  slantText(ctx, 'FILAN', lx, 330, { size: 64, color: ACCENT, align: 'left', lean: 0 });
+  slantText(ctx, 'ANTRENMAN TAMAM', lx, 400, { size: 34, color: ACCENT, align: 'center', lean: 0, maxWidth: 480 });
+  slantText(ctx, String(L.minutes), lx, 650, { size: 280, align: 'center', lean: 0, maxWidth: 440 });
+  slantText(ctx, 'DAKİKA', lx, 730, { size: 56, color: ACCENT, align: 'center', lean: 0 });
+
+  // Right column: day, date, HIIT, site
+  const rx = 1600;
+  slantText(ctx, L.day, rx, 330, { size: 62, align: 'center', lean: 0, maxWidth: 480 });
+  slantText(ctx, L.date, rx, 410, { size: 52, align: 'center', lean: 0, maxWidth: 480, color: 'rgba(255,255,255,.85)' });
+  if (L.hiit) {
+    ctx.font = `900 46px ${FONT}`;
+    const w = Math.min(480, ctx.measureText(L.hiit).width + 70);
+    ctx.fillStyle = ACCENT;
+    ctx.fillRect(rx - w / 2, 500, w, 86);
+    slantText(ctx, L.hiit, rx, 560, { size: 46, color: '#16110c', align: 'center', lean: 0, maxWidth: w - 40 });
+  }
+  slantText(ctx, SITE, rx, 800, { size: 30, align: 'center', lean: 0, maxWidth: 480, color: 'rgba(255,255,255,.9)' });
+  return c;
+}
+
 // Sticker-style text: thick dark outline so it reads on any photo, soft shadow underneath.
 function stickerText(ctx, text, x, y, { size, color = '#fff', align = 'center', lean = 0, maxWidth, outline = '#0d1117' }) {
   let sz = size;
@@ -297,6 +456,8 @@ export async function renderShareCanvas(style, d) {
   try { await document.fonts?.ready; } catch { /* fonts API missing */ }
   const logo = await loadLogo();
   if (style === 'card') return drawCard(d, logo);
+  if (style === 'wide') return drawWide(d, logo);
+  if (style === 'story') return drawStory(d, logo);
   if (style === 'strip') return drawStrip(d, logo);
   return drawTransparent(d, logo);
 }
