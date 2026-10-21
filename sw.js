@@ -1,5 +1,5 @@
 // Offline cache for the app shell. Bump CACHE when shipping changes.
-const CACHE = 'hitfilan-v24';
+const CACHE = 'hitfilan-v25';
 const ASSETS = [
   './',
   'index.html',
@@ -96,6 +96,14 @@ const ASSETS = [
   'img/ex/db_reverse_fly-1.webp',
   'img/ex/db_shrug-0.webp',
   'img/ex/db_shrug-1.webp',
+  'img/ex/butterfly-0.webp',
+  'img/ex/butterfly-1.webp',
+  'img/ex/mat_fly-0.webp',
+  'img/ex/mat_fly-1.webp',
+  'img/ex/reverse_crunch-0.webp',
+  'img/ex/reverse_crunch-1.webp',
+  'img/ex/db_pullover-0.webp',
+  'img/ex/db_pullover-1.webp',
   'img/ex/bike-0.webp',
   'img/ex/bike-1.webp',
 ];

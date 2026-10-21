@@ -1208,3 +1208,15 @@ details.ex.lib summary { flex-wrap: nowrap; gap: 12px; }
   .counter-ring { width: min(46vw, 64vh, 300px); }
   #view-counter.active { min-height: calc(100dvh - 130px); }
 }
+
+/* ---------- Home pair and Hareketler panes ---------- */
+.home-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; align-items: stretch; }
+.home-pair > div { min-width: 0; }
+.home-pair .card { height: 100%; margin-bottom: 0; padding: 14px; }
+.home-pair .today-goals h3 { font-size: 15px; }
+.home-pair .meta { overflow-wrap: anywhere; }
+@media (max-width: 359px) { .home-pair { grid-template-columns: 1fr; } .home-pair .card { height: auto; } }
+.chips.seg { margin-bottom: 12px; }
+.chips.seg .chip { flex: 1; text-align: center; }
+.ex-pane[hidden] { display: none; }
+#group-filter { margin-top: 8px; }

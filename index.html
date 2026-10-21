@@ -24,32 +24,13 @@
   </header>
 
   <main>
-    <section id="view-home" class="view active" aria-label="Antrenmanlar">
+    <section id="view-home" class="view active" aria-label="Ana sayfa">
       <div id="resume-card" class="card resume" hidden></div>
       <div id="home-goals"></div>
-      <div id="home-nutrition"></div>
-      <div id="home-counter"></div>
       <div id="week-summary" class="card week"></div>
-
-      <div class="section-head">
-        <h2 class="section-title">Planlarım</h2>
-      </div>
-      <div id="plan-list" class="program-list"></div>
-
-      <h2 class="section-title">Kondisyon Bisikleti</h2>
-      <div id="bike-list" class="program-list"></div>
-
-      <h2 class="section-title">Kuvvet &amp; Yağ Yakım</h2>
-      <div id="circuit-list" class="program-list"></div>
-
-      <div class="card tip">
-        <h3>Haftalık öneri</h3>
-        <ul>
-          <li>Haftada 3 gün <b>Bisiklet Akışı</b>: yeni başlıyorsan 30 dk, alıştıkça 45 dk–1 saat.</li>
-          <li>Araya 2 gün <b>Dumbbell Yağ Yakıcı</b> ya da <b>Kısa Kuvvet</b>.</li>
-          <li>Enerjin varsa bisikletten sonra <b>Core Bitirici</b> ekle.</li>
-          <li>Kilo vermenin asıl anahtarı beslenme: hafif kalori açığı + yeterli protein.</li>
-        </ul>
+      <div class="home-pair">
+        <div id="home-nutrition"></div>
+        <div id="home-counter"></div>
       </div>
 
       <div class="coffee">
@@ -61,13 +42,50 @@
     </section>
 
     <section id="view-exercises" class="view" aria-label="Hareketler">
-      <div class="chips" id="exercise-filter" role="tablist">
-        <button class="chip active" data-filter="all">Tümü</button>
-        <button class="chip" data-filter="bodyweight">Vücut ağırlığı</button>
-        <button class="chip" data-filter="dumbbell">Dumbbell</button>
+      <div class="chips seg" id="ex-pane-tabs" role="tablist">
+        <button class="chip active" data-pane="suggest" role="tab">Öneriler</button>
+        <button class="chip" data-pane="plans" role="tab">Planlarım</button>
+        <button class="chip" data-pane="library" role="tab">Hareketler</button>
       </div>
-      <div id="exercise-list" class="exercise-list"></div>
-      <p class="fineprint credit">Hareket fotoğrafları: <a href="https://github.com/yuhonas/free-exercise-db" target="_blank" rel="noopener">free-exercise-db</a> (kamu malı).</p>
+
+      <div id="pane-suggest" class="ex-pane">
+        <h2 class="section-title">Kondisyon Bisikleti</h2>
+        <div id="bike-list" class="program-list"></div>
+
+        <h2 class="section-title">Kuvvet &amp; Yağ Yakım</h2>
+        <div id="circuit-list" class="program-list"></div>
+
+        <div class="card tip">
+          <h3>Haftalık öneri</h3>
+          <ul>
+            <li>Haftada 3 gün <b>Bisiklet Akışı</b>: yeni başlıyorsan 30 dk, alıştıkça 45 dk–1 saat.</li>
+            <li>Araya 2 gün <b>Dumbbell Yağ Yakıcı</b> ya da <b>Kısa Kuvvet</b>.</li>
+            <li>Enerjin varsa bisikletten sonra <b>Core Bitirici</b> ekle.</li>
+            <li>Kilo vermenin asıl anahtarı beslenme: hafif kalori açığı + yeterli protein.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div id="pane-plans" class="ex-pane" hidden>
+        <div id="plan-list" class="program-list"></div>
+      </div>
+
+      <div id="pane-library" class="ex-pane" hidden>
+        <div class="chips" id="exercise-filter" role="group" aria-label="Ekipman">
+          <button class="chip active" data-filter="all">Tümü</button>
+          <button class="chip" data-filter="bodyweight">Vücut ağırlığı</button>
+          <button class="chip" data-filter="dumbbell">Dumbbell</button>
+        </div>
+        <div class="chips" id="group-filter" role="group" aria-label="Bölge">
+          <button class="chip active" data-group="all">Hepsi</button>
+          <button class="chip" data-group="chest">Göğüs &amp; Üst vücut</button>
+          <button class="chip" data-group="core">Karın &amp; Core</button>
+          <button class="chip" data-group="lower">Kalça &amp; Bacak</button>
+          <button class="chip" data-group="other">Tüm vücut</button>
+        </div>
+        <div id="exercise-list" class="exercise-list"></div>
+        <p class="fineprint credit">Hareket fotoğrafları: <a href="https://github.com/yuhonas/free-exercise-db" target="_blank" rel="noopener">free-exercise-db</a> (kamu malı).</p>
+      </div>
     </section>
 
     <section id="view-history" class="view" aria-label="Takvim">
@@ -278,8 +296,8 @@
 
   <nav class="tabbar" aria-label="Menü">
     <button class="tab active" data-view="home">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="17" r="3.5"/><circle cx="18" cy="17" r="3.5"/><path d="M6 17l4-8h5l3 8M10 9l3 8M13 5h3"/></svg>
-      <span>Antrenman</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7M6 10v9h12v-9"/></svg>
+      <span>Ana sayfa</span>
     </button>
     <button class="tab" data-view="exercises">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10v4M6 7v10M18 7v10M21 10v4M6 12h12"/></svg>

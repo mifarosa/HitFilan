@@ -392,8 +392,11 @@ sheet.addEventListener('click', (e) => {
 
 /* ---------- Exercises ---------- */
 
-function renderExercises(filter = 'all') {
-  const list = Object.entries(EXERCISES).filter(([, ex]) => filter === 'all' || ex.equip === filter);
+function renderExercises() {
+  const equip = $('#exercise-filter .chip.active').dataset.filter;
+  const group = $('#group-filter .chip.active').dataset.group;
+  const list = Object.entries(EXERCISES)
+    .filter(([, ex]) => (equip === 'all' || ex.equip === equip) && (group === 'all' || ex.group === group));
   $('#exercise-list').innerHTML = list.map(([id, ex]) => `
     <details class="card ex lib" data-ex="${id}">
       <summary>
@@ -418,9 +421,17 @@ $('#exercise-list').addEventListener('toggle', (e) => {
   if (slot) slot.innerHTML = visualHTML(slot.dataset.visual, 'full', esc(EXERCISES[slot.dataset.visual].name));
 }, true);
 
-$$('#exercise-filter .chip').forEach((c) => c.addEventListener('click', () => {
-  $$('#exercise-filter .chip').forEach((x) => x.classList.toggle('active', x === c));
-  renderExercises(c.dataset.filter);
+for (const sel of ['#exercise-filter', '#group-filter']) {
+  $$(`${sel} .chip`).forEach((c) => c.addEventListener('click', () => {
+    $$(`${sel} .chip`).forEach((x) => x.classList.toggle('active', x === c));
+    renderExercises();
+  }));
+}
+
+// Hareketler tab: suggestions, own plans, move library.
+$$('#ex-pane-tabs .chip').forEach((c) => c.addEventListener('click', () => {
+  $$('#ex-pane-tabs .chip').forEach((x) => x.classList.toggle('active', x === c));
+  $$('.ex-pane').forEach((p) => { p.hidden = p.id !== `pane-${c.dataset.pane}`; });
 }));
 
 /* ---------- History ---------- */
@@ -673,7 +684,7 @@ form.addEventListener('change', () => {
   settings = next;
   saveSettings(settings);
   renderHome();
-  renderExercises($('#exercise-filter .chip.active').dataset.filter);
+  renderExercises();
 });
 
 $('#test-sound').addEventListener('click', () => {

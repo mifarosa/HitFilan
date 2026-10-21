@@ -146,7 +146,7 @@ export const EXERCISES = {
     harder: 'Her dönüşte 1 sn bekle.',
   },
   leg_raise: {
-    name: 'Bacak Kaldırma',
+    name: 'Bacak Kaldırma (Lying Leg Raise)',
     equip: 'bodyweight',
     target: 'Alt karın',
     how: 'Sırtüstü, eller kalça altında. Düz bacakları yavaşça kaldır ve indir, yere değdirme.',
@@ -341,7 +341,76 @@ export const EXERCISES = {
     harder: 'Tepede 2 sn bekle.',
     sides: true,
   },
+  butterfly: {
+    name: 'Butterfly (Chest Fly)',
+    equip: 'dumbbell',
+    target: 'Göğüs, ön omuz',
+    how: 'Sırtüstü ya da eğimli, dumbbell’lar göğüs üstünde. Dirsekler hafif bükük, kolları kanat gibi iki yana aç; göğsün gerildiğini hisset, sonra göğüs kaslarını sıkarak birleştir.',
+    easier: 'Daha hafif dumbbell, daha dar açı.',
+    harder: 'Alt noktada 2 sn bekle.',
+  },
+  mat_fly: {
+    name: 'Yatarak Dumbbell Fly (Mat Fly)',
+    equip: 'dumbbell',
+    target: 'Göğüs',
+    how: 'Matın üstünde sırtüstü, dizler bükülü. Kollar yukarıda dirsekler hafif bükük; dumbbell’ları yarım daire çizerek yana aç, dirsekler yere değince göğüsten sıkarak geri getir.',
+    easier: 'Daha hafif dumbbell kullan.',
+    harder: 'Aşağıda 2 sn bekle.',
+  },
+  knee_pushup: {
+    name: 'Diz Üstü Şınav',
+    equip: 'bodyweight',
+    target: 'Göğüs, omuz, arka kol',
+    how: 'Dizler yerde, eller omuz hizasında. Vücut dizden başa düz bir çizgi olsun; göğsü yere yaklaştır ve it.',
+    easier: 'Eller yükseltilmiş yüzeyde (koltuk), daha kısa iniş.',
+    harder: 'Normal şınava geç.',
+  },
+  reverse_crunch: {
+    name: 'Ters Mekik (Reverse Crunch)',
+    equip: 'bodyweight',
+    target: 'Alt karın',
+    how: 'Sırtüstü, dizler 90° bükülü havada. Bel yerden kalkana kadar dizleri göğse çek, yavaşça indir. Boynu ve omuzları gevşek tut.',
+    easier: 'Daha küçük hareket, ayaklar yere yakın.',
+    harder: 'Bacakları daha uzat, inişi yavaşlat.',
+  },
+  side_leg_raise: {
+    sides: true, // announce 'switch sides' at half time
+    name: 'Yatarak Yan Bacak Kaldırma (Abduction)',
+    equip: 'bodyweight',
+    target: 'Kalça yanı, dış bacak',
+    how: 'Yan yat, alttaki bacak hafif bükük. Üstteki bacağı düz tutarak kalçanın hizasından yukarı kaldır, kontrollü indir. Sürenin yarısında taraf değiştir.',
+    easier: 'Daha küçük açı.',
+    harder: 'Tepede 2 sn bekle ya da ayak bileğine bant bağla.',
+  },
+  db_pullover: {
+    name: 'Dumbbell Pullover',
+    equip: 'dumbbell',
+    target: 'Göğüs, sırt',
+    how: 'Sırtüstü, dumbbell’ı iki elle göğüs üstünde tut. Kollar hafif bükük, dumbbell’ı başın arkasına doğru indir, göğsün gerildiğini hisset ve geri çek.',
+    easier: 'Daha hafif dumbbell.',
+    harder: 'Alt noktada 2 sn bekle.',
+  },
 };
+
+// Body areas for the library filter (id -> group). Anything not listed is 'other'.
+export const GROUPS = [
+  { id: 'chest', label: 'Göğüs & Üst vücut' },
+  { id: 'core', label: 'Karın & Core' },
+  { id: 'lower', label: 'Kalça & Bacak' },
+  { id: 'other', label: 'Tüm vücut' },
+];
+const GROUP_OF = {
+  chest: ['pushup', 'knee_pushup', 'floor_press', 'butterfly', 'mat_fly', 'db_pullover', 'db_press', 'db_row',
+    'db_curl', 'db_hammer', 'db_triceps', 'db_kickback', 'db_lateral', 'db_front', 'db_reverse_fly', 'db_shrug'],
+  core: ['plank', 'side_plank', 'dead_bug', 'crunch', 'bicycle_crunch', 'leg_raise', 'situp', 'reverse_crunch',
+    'russian_twist', 'woodchop', 'mountain_climber', 'superman'],
+  lower: ['squat', 'reverse_lunge', 'glute_bridge', 'side_leg_raise', 'goblet_squat', 'db_rdl', 'goblet_lunge',
+    'db_sumo', 'db_calf', 'skater'],
+};
+for (const [group, ids] of Object.entries(GROUP_OF)) {
+  for (const id of ids) EXERCISES[id].group = group;
+}
+for (const ex of Object.values(EXERCISES)) ex.group ||= 'other';
 
 // Exercises with start/end photos in img/ex/<id>-0.webp and -1.webp.
 // Photos: free-exercise-db (github.com/yuhonas/free-exercise-db), public domain (Unlicense).
@@ -349,7 +418,7 @@ const PHOTO_IDS = new Set([
   'squat', 'pushup', 'reverse_lunge', 'mountain_climber', 'jumping_jack', 'skater', 'plank', 'side_plank',
   'glute_bridge', 'dead_bug', 'bicycle_crunch', 'leg_raise', 'crunch', 'situp', 'superman',
   'goblet_squat', 'db_rdl', 'db_row', 'db_press', 'db_swing', 'db_thruster', 'goblet_lunge', 'russian_twist',
-  'floor_press', 'db_curl', 'db_hammer', 'db_triceps', 'db_kickback', 'db_lateral', 'db_front', 'db_sumo',
+  'floor_press', 'butterfly', 'mat_fly', 'reverse_crunch', 'db_pullover', 'db_curl', 'db_hammer', 'db_triceps', 'db_kickback', 'db_lateral', 'db_front', 'db_sumo',
   'db_calf', 'db_reverse_fly', 'db_shrug', 'bike',
 ]);
 
