@@ -9,6 +9,7 @@ import { renderGoals, initGoals, todayGoalsHTML } from './goals.js';
 import { renderNutrition, initNutrition, todayKcalHTML } from './nutrition.js';
 import { netBurn } from './nutrition-core.js';
 import { renderCounter, initCounter, counterCardHTML } from './counter.js';
+import { initVideo, closeVideo, pauseVideo } from './video.js';
 import { SHARE_STYLES, renderShareCanvas, shareOrSave } from './share-image.js';
 import {
   initPlans, openEditor, deletePlan, duplicatePlan, planFromProgram, planRowsHTML,
@@ -1052,6 +1053,7 @@ function startRunner(programId, opts, resume = null) {
       if (!muted && settings.beeps) beeps.finish();
       if (settings.vibrate) vibrate([300, 100, 300, 100, 500]);
       if (!muted && settings.voice) setTimeout(() => speak('Antrenman tamamlandı. Harika iş!'), 900);
+      pauseVideo();
       saveRun(true);
       clearActive();
       $('#finish-text').textContent = `${run.name} bitti. ${formatTime(t.totalElapsed())} · ~${estimateKcal(run.steps, settings.weightKg, t.totalElapsed())} kcal`;
@@ -1076,6 +1078,7 @@ function startRunner(programId, opts, resume = null) {
 }
 
 function closeRunner() {
+  closeVideo();
   timer?.stop();
   timer = null;
   run = null;
@@ -1280,6 +1283,7 @@ renderResume();
 initGoals();
 initNutrition({ candidates: suggestionCandidates, onStart: openSheet, goto: showView });
 initCounter({ goto: showView });
+initVideo({ runner });
 renderHomeCounter();
 renderHomeNutrition();
 /* ---------- Cloud backup ---------- */
@@ -1358,9 +1362,6 @@ initPlans({
 });
 renderHomeGoals();
 initSync({ onStatus: renderSync, onRemoteChange: refreshFromStorage });
-
-// Phone-style portrait only; the lock works in installed/fullscreen contexts and is ignored elsewhere.
-try { screen.orientation?.lock?.('portrait')?.catch(() => {}); } catch { /* unsupported */ }
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   navigator.serviceWorker.register('sw.js').catch(() => {});

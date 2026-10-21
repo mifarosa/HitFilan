@@ -6,6 +6,7 @@ Home Gym PWA App — ev için kondisyon bisikleti zamanlayıcısı ve kuvvet dev
 - **Ana sayfa**: kişisel özet (yarım kalan antrenman, bugünkü hedefler, haftalık seri) ve yan yana Beslenme ile Serbest sayaç kartları
 - **Hareketler** sekmesi: *Öneriler* (bisiklet akışları, kuvvet devreleri), *Planlarım* ve *Hareketler* (43 hareket; ekipmana ve bölgeye göre süzülür, fotoğraflı)
 - **Planlarım**: bir hareket seç, set / tekrar (ya da süre) / kg / setler arası dinlenmeyi tek küçük formda gir; hareketleri sürükleyerek ya da oklarla sırala. Hareketler tek tek ilerler, tekrarlı setleri sen "yaptım" diyerek geçersin. Eski bölümlü planlar açılırken düz listeye çevrilir.
+- **Video**: antrenman ekranında YouTube bağlantısı yapıştırıp küçük oynatıcıda izle (yatayda solda büyük, dikeyde üstte; küçültülebilir). Gömmeye izin vermeyen videolarda "YouTube’da aç" bağlantısı çıkar. Video yalnızca uygulama açıkken oynar.
 - **Serbest sayaç**: tek dev sayaç, istersen doz; ekran açık kalır
 - **Paylaşım görselleri**: bitiş görseli (Arka planlı, 9:16 ve 16:9 boş kareli, Saydam, Çizgi)
 - **Kuvvet devreleri** (vücut ağırlığı + tek 7.5 kg dumbbell): Dumbbell Yağ Yakıcı, Vücut Ağırlığı HIIT, Kısa Kuvvet, Core Bitirici; çalış/dinlen/tur süreleri ayarlanabilir

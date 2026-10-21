@@ -353,6 +353,26 @@
 
   <dialog id="step-picker" class="sheet"></dialog>
 
+  <dialog id="video-sheet" class="sheet">
+    <div class="sheet-inner">
+      <div class="sheet-head">
+        <h2>Video ekle</h2>
+        <button type="button" class="icon-btn" id="video-close" aria-label="Kapat">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <p class="meta">Antrenmanda küçük bir oynatıcıda açılır. Videoyu başlatmak için oynatıcıya bir kez dokun.</p>
+      <form id="video-form" class="video-form">
+        <input type="text" id="video-input" inputmode="url" autocomplete="off" placeholder="YouTube bağlantısını yapıştır" aria-label="YouTube bağlantısı">
+        <button type="submit" class="btn primary">Aç</button>
+      </form>
+      <p class="video-sheet-msg" id="video-sheet-msg" role="status"></p>
+      <h4>Son kullanılanlar</h4>
+      <div id="video-recent"></div>
+      <p class="fineprint">Video yalnızca uygulama açıkken oynar; ekran kilitlenirse durur. Bazı videolar uygulamada oynatılamaz, onları YouTube’da açabilirsin.</p>
+    </div>
+  </dialog>
+
   <dialog id="share-dialog" class="sheet share-sheet">
     <div class="sheet-inner">
     <h3>Paylaşım görseli</h3>
@@ -373,12 +393,27 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
       <div class="runner-title" id="runner-title"></div>
+      <button class="icon-btn" id="runner-video" aria-label="Video">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5l5 2.5-5 2.5z"/></svg>
+      </button>
       <button class="icon-btn" id="runner-sound" aria-label="Sesi aç/kapat">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="wave" d="M16 9a4 4 0 010 6M18.5 6.5a7.5 7.5 0 010 11"/><path class="mute" d="M16 9l5 6M21 9l-5 6"/></svg>
       </button>
     </div>
 
     <div class="timeline" id="timeline"><div class="playhead" id="playhead"></div></div>
+
+    <div class="video-dock" id="video-dock" hidden>
+      <div class="video-frame"></div>
+      <p class="video-msg" hidden></p>
+      <div class="video-bar">
+        <div class="video-title"><b></b><small>YouTube</small></div>
+        <button type="button" data-vact="play" aria-label="Oynat">▶</button>
+        <button type="button" data-vact="size" aria-label="Küçült">⌄</button>
+        <button type="button" data-vact="swap" aria-label="Videoyu değiştir">⇄</button>
+        <button type="button" data-vact="close" aria-label="Videoyu kapat">✕</button>
+      </div>
+    </div>
 
     <div class="runner-main">
       <div class="step-tag" id="step-tag"></div>
