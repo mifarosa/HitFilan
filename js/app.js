@@ -9,6 +9,7 @@ import { renderGoals, initGoals, todayGoalsHTML } from './goals.js';
 import { renderNutrition, initNutrition, todayKcalHTML } from './nutrition.js';
 import { netBurn } from './nutrition-core.js';
 import { renderCounter, initCounter, counterCardHTML } from './counter.js';
+import { initVideo, closeVideo, pauseVideo } from './video.js';
 import { SHARE_STYLES, renderShareCanvas, shareOrSave } from './share-image.js';
 import {
   initPlans, openEditor, deletePlan, duplicatePlan, planFromProgram, planRowsHTML,
@@ -56,7 +57,7 @@ function showView(name) {
     renderHomeNutrition();
     renderHomeCounter();
   }
-  window.scrollTo(0, 0);
+  $('main').scrollTo(0, 0);
   syncWakeLock();
 }
 
@@ -173,7 +174,61 @@ function renderPlans() {
   $('#new-plan').addEventListener('click', () => openEditor());
 }
 
+const HOME_PLANS = 5;
+
+// The plans done most often (then most recently), at most HOME_PLANS; the rest sit
+// under Hareketler > Planlarım.
+function renderHomePlans() {
+  const el = $('#home-plans');
+  const plans = loadPlans();
+  if (!plans.length) {
+    el.innerHTML = `
+      <button type="button" class="card new-plan" data-new-plan>
+        <span class="new-plan-plus" aria-hidden="true">+</span>
+        <span><b>İlk planını oluştur</b><small>Hareketlerini seç, set ve tekrarı gir</small></span>
+      </button>`;
+  } else {
+    const stats = new Map();
+    for (const e of loadHistory()) {
+      const st = stats.get(e.programId) || { n: 0, last: 0 };
+      st.n += 1;
+      st.last = Math.max(st.last, new Date(e.date).getTime());
+      stats.set(e.programId, st);
+    }
+    const ranked = plans
+      .map((pl, i) => ({ pl, i, st: stats.get(pl.id) || { n: 0, last: 0 } }))
+      .sort((a, b) => b.st.n - a.st.n || b.st.last - a.st.last || a.i - b.i);
+    const rows = ranked.slice(0, HOME_PLANS).map(({ pl, st }) => {
+      const p = getProgram(pl.id);
+      const steps = buildSteps(p.id, {});
+      return `
+        <button type="button" class="plan-row" data-program="${p.id}">
+          <span class="plan-row-text">
+            <b>${esc(p.name)}</b>
+            <small>${minutesLabel(totalSeconds(steps))} · ${pl.sections.reduce((n, s) => n + s.items.length, 0)} hareket${st.n ? ` · ${st.n}× yapıldı` : ''}</small>
+          </span>
+          <span class="go" aria-hidden="true">›</span>
+        </button>`;
+    }).join('');
+    const more = plans.length > HOME_PLANS
+      ? `<button type="button" class="plan-more" data-all-plans>Tüm planlar (${plans.length}) ›</button>`
+      : '';
+    el.innerHTML = `
+      <div class="section-head">
+        <h2 class="section-title">Planlarım</h2>
+        <button type="button" class="plan-add" data-new-plan aria-label="Yeni plan">+ Yeni</button>
+      </div>
+      <div class="plan-rows">${rows}</div>${more}`;
+  }
+  el.querySelectorAll('[data-new-plan]').forEach((b) => b.addEventListener('click', () => openEditor()));
+  el.querySelector('[data-all-plans]')?.addEventListener('click', () => {
+    showView('exercises');
+    $('#ex-pane-tabs [data-pane="plans"]').click();
+  });
+}
+
 function renderHome() {
+  renderHomePlans();
   renderPlans();
   $('#bike-list').innerHTML = durationChips()
     + [selectedBike(), getProgram('combo')].map(programCard).join('');
@@ -998,6 +1053,7 @@ function startRunner(programId, opts, resume = null) {
       if (!muted && settings.beeps) beeps.finish();
       if (settings.vibrate) vibrate([300, 100, 300, 100, 500]);
       if (!muted && settings.voice) setTimeout(() => speak('Antrenman tamamlandı. Harika iş!'), 900);
+      pauseVideo();
       saveRun(true);
       clearActive();
       $('#finish-text').textContent = `${run.name} bitti. ${formatTime(t.totalElapsed())} · ~${estimateKcal(run.steps, settings.weightKg, t.totalElapsed())} kcal`;
@@ -1022,6 +1078,7 @@ function startRunner(programId, opts, resume = null) {
 }
 
 function closeRunner() {
+  closeVideo();
   timer?.stop();
   timer = null;
   run = null;
@@ -1226,6 +1283,7 @@ renderResume();
 initGoals();
 initNutrition({ candidates: suggestionCandidates, onStart: openSheet, goto: showView });
 initCounter({ goto: showView });
+initVideo({ runner });
 renderHomeCounter();
 renderHomeNutrition();
 /* ---------- Cloud backup ---------- */
@@ -1304,9 +1362,6 @@ initPlans({
 });
 renderHomeGoals();
 initSync({ onStatus: renderSync, onRemoteChange: refreshFromStorage });
-
-// Phone-style portrait only; the lock works in installed/fullscreen contexts and is ignored elsewhere.
-try { screen.orientation?.lock?.('portrait')?.catch(() => {}); } catch { /* unsupported */ }
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   navigator.serviceWorker.register('sw.js').catch(() => {});
