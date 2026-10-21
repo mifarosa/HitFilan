@@ -1369,56 +1369,81 @@ details.ex.lib summary { flex-wrap: nowrap; gap: 12px; }
 /* Long lists: skip rendering cards that are far off screen. */
 .exercise-list > .card.lib { content-visibility: auto; contain-intrinsic-size: auto 84px; }
 
-/* ---------- Workout with a video (.video-on): the video leads, a compact "now" card
-   and the controls sit below. The segmented timeline moves from the top to a thin
-   progress line above the totals. ---------- */
+/* ---------- Workout with a video (.video-on): the video leads and the rest uses the room.
+   Portrait: video, a roomy "now" card that grows to fill the screen, next step, a thin
+   progress line (the segmented timeline moves down from the top), totals, controls.
+   Landscape: the video fills the left side, everything else sits in a column on the right. ---------- */
 .runner.video-on { padding-left: 0; padding-right: 0; }
 .runner.video-on > * { margin-left: 16px; margin-right: 16px; }
-.runner.video-on .video-dock { order: 1; margin: 8px 0 0; border-radius: 0; border-left: 0; border-right: 0; box-shadow: none; }
 .runner.video-on .runner-top { order: 0; }
+.runner.video-on .video-dock { order: 1; margin: 8px 0 0; border-radius: 0; border-left: 0; border-right: 0; box-shadow: none; }
 .runner.video-on .runner-main {
-  order: 2; flex: none; display: grid; grid-template-columns: auto 1fr; grid-template-areas: "ring tag" "ring label" "ring hint"; grid-template-rows: auto auto auto;
-  align-items: center; align-content: center; column-gap: 14px; text-align: left; padding: 12px 14px; margin-top: 12px; min-height: 0;
+  order: 2; flex: 1 1 auto; display: grid; grid-template-columns: auto 1fr;
+  grid-template-areas: "ring tag" "ring label" "ring targets" "hint hint";
+  align-content: center; align-items: center; column-gap: 16px; row-gap: 2px; text-align: left;
+  padding: 14px 16px; margin-top: 12px; min-height: 0;
   border-radius: 20px; border: 1px solid color-mix(in srgb, var(--lvl) 45%, var(--line));
   background: color-mix(in srgb, var(--lvl) 13%, var(--surface));
 }
-.runner.video-on .ring { grid-area: ring; width: 92px; }
-.runner.video-on .ring-time { font-size: 26px; }
-.runner.video-on .ring-sub { font-size: 11px; }
+.runner.video-on .ring { grid-area: ring; width: 118px; }
+.runner.video-on .ring-time { font-size: 30px; }
+.runner.video-on .ring-sub { font-size: 12px; }
 .runner.video-on .step-tag { grid-area: tag; text-align: left; font-size: 13px; align-self: end; }
-.runner.video-on .step-label { grid-area: label; text-align: left; margin: 2px 0 0; font-size: 22px; line-height: 1.15; align-self: start; }
-.runner.video-on:not(.warning) .runner-main { grid-template-areas: "ring tag" "ring label"; }
-.runner.video-on .step-hint { grid-area: hint; display: none; margin: 4px 0 0; min-height: 0; font-size: 14px; text-align: left; }
-.runner.video-on.warning .step-hint { display: block; }
-.runner.video-on .targets, .runner.video-on .runner-visual { display: none; }
+.runner.video-on .step-label { grid-area: label; text-align: left; margin: 2px 0 0; font-size: 26px; line-height: 1.15; }
+.runner.video-on .targets { grid-area: targets; margin: 8px 0 0; justify-content: flex-start; flex-wrap: wrap; gap: 8px; align-self: start; }
+.runner.video-on .step-hint { grid-area: hint; display: block; margin: 12px 0 0; min-height: 0; max-width: none; font-size: 14px; text-align: left; }
+.runner.video-on .runner-visual { display: none; }
 .runner.video-on .next-step { order: 3; margin-top: 10px; }
 .runner.video-on .timeline { order: 4; margin-top: 14px; margin-bottom: 0; }
 .runner.video-on .totals { order: 5; margin-top: 12px; margin-bottom: 8px; }
-.runner.video-on .controls { order: 6; margin-top: auto; padding-top: 6px; }
+.runner.video-on .controls { order: 6; margin-top: 0; padding-top: 6px; }
 .video-title { cursor: pointer; }
 
 @media (orientation: landscape) and (max-height: 600px) {
   .runner.video-on {
-    grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr) auto auto auto minmax(0, 1fr);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(260px, 36vw, 340px);
+    grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
     grid-template-areas:
-      "top   top"
-      "video ."
+      "video top"
+      "video totals"
       "video now"
       "video next"
-      "video controls"
-      "video .";
-    column-gap: clamp(14px, 3vw, 28px);
-    padding-left: calc(16px + env(safe-area-inset-left, 0px));
-    padding-right: calc(16px + env(safe-area-inset-right, 0px));
+      "video ."
+      "video controls";
+    column-gap: 14px;
+    padding: 0 calc(14px + env(safe-area-inset-right, 0px)) 0 env(safe-area-inset-left, 0px);
   }
   .runner.video-on > * { margin-left: 0; margin-right: 0; }
-  .runner.video-on .timeline { display: none; } /* the top bar already carries the totals; the video gets the room */
-  .runner.video-on .video-dock { grid-area: video; align-self: center; margin: 0; border-radius: 18px; border: 1px solid var(--line); }
-  .runner.video-on .runner-main { grid-area: now; margin-top: 0; padding: 10px 12px; }
+  .runner.video-on .runner-top { margin-top: calc(8px + var(--safe-t)); }
+  .runner.video-on .timeline { display: none; } /* the video gets the room; progress shows in the totals */
+  /* The video fills the whole left side; the player grows to the space above its bar. */
+  .runner.video-on .video-dock {
+    grid-area: video; display: flex; flex-direction: column; height: 100%; margin: 0;
+    border-radius: 0 16px 16px 0; border: 1px solid var(--line); border-left: 0;
+  }
+  .runner.video-on .video-frame { flex: 1; min-height: 0; aspect-ratio: auto; }
+  /* The totals leave the top bar and sit in the right column, leaning a little to the left. */
+  .runner.video-on .totals {
+    grid-area: totals; justify-self: stretch; align-self: start; display: grid; grid-template-columns: 1fr 1fr;
+    gap: 4px 12px; margin: 8px 0 0; padding: 8px 14px; border-radius: 12px; transform: skewX(6deg);
+    background: color-mix(in srgb, var(--lvl) 12%, var(--surface)); pointer-events: none;
+  }
+  .runner.video-on .totals > div { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+  .runner.video-on .totals b { font-size: 16px; }
+  .runner.video-on .runner-main { grid-area: now; margin-top: 10px; padding: 10px 12px; flex: none; }
   .runner.video-on .ring { width: min(22vh, 15vw, 84px); }
   .runner.video-on .ring-time { font-size: clamp(18px, 5vh, 24px); }
-  .runner.video-on .step-label { font-size: clamp(18px, 3vw, 24px); }
+  .runner.video-on .step-label { font-size: clamp(18px, 3vw, 22px); }
+  .runner.video-on .targets, .runner.video-on .step-hint { display: none; }
   .runner.video-on .next-step { grid-area: next; margin-top: 8px; }
-  .runner.video-on .controls { grid-area: controls; margin-top: 8px; padding-top: 0; justify-content: flex-start; }
+  .runner.video-on .controls { grid-area: controls; margin: 0 0 calc(10px + var(--safe-b)); padding-top: 0; justify-content: flex-start; }
 }
+
+/* ---------- Install tip ---------- */
+.install-tip { display: flex; align-items: center; gap: 12px; }
+.install-tip[hidden] { display: none; }
+.install-tip div { flex: 1; min-width: 0; }
+.install-tip b { display: block; }
+.install-tip small { color: var(--muted); font-size: 13px; }
+.install-tip .btn { padding: 10px 16px; }

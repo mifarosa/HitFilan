@@ -174,6 +174,26 @@ function renderPlans() {
   $('#new-plan').addEventListener('click', () => openEditor());
 }
 
+// In a normal browser tab the browser's own bars stay on screen; installed to the home
+// screen the app runs full screen. Shown once per device, until dismissed.
+function renderInstallTip() {
+  const el = $('#home-tip');
+  let hide = false;
+  try {
+    hide = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true
+      || localStorage.getItem('hitfilan.installTip') === '1';
+  } catch { /* storage unavailable: show the tip */ }
+  el.hidden = hide;
+  if (hide) return;
+  el.innerHTML = `
+    <div><b>Tam ekran kullan</b><small>Paylaş → “Ana Ekrana Ekle”. Tarayıcı çubukları kaybolur, uygulama daha rahat çalışır.</small></div>
+    <button type="button" class="btn ghost">Tamam</button>`;
+  el.querySelector('button').addEventListener('click', () => {
+    try { localStorage.setItem('hitfilan.installTip', '1'); } catch { /* storage unavailable */ }
+    el.hidden = true;
+  });
+}
+
 const HOME_PLANS = 5;
 
 // The plans done most often (then most recently), at most HOME_PLANS; the rest sit
@@ -1283,6 +1303,7 @@ renderResume();
 initGoals();
 initNutrition({ candidates: suggestionCandidates, onStart: openSheet, goto: showView });
 initCounter({ goto: showView });
+renderInstallTip();
 initVideo({ runner });
 renderHomeCounter();
 renderHomeNutrition();
