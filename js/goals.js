@@ -425,7 +425,7 @@ export function initGoals() {
     if (!confirm(`${p.name} bugün başlasın mı?`)) return;
     startGoal({ presetId: p.id, name: p.name, noun: p.noun, unit: p.unit, plan: p.plan });
     renderGoals();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.querySelector('main').scrollTo({ top: 0, behavior: 'smooth' });
   });
 
   const form = $('#custom-goal');
@@ -458,6 +458,6 @@ export function initGoals() {
       : `1 ayda ${num(total)} ${x.noun}`;
     startGoal({ name, noun: x.noun, unit: x.unit, total, plan: null });
     renderGoals();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.querySelector('main').scrollTo({ top: 0, behavior: 'smooth' });
   });
 }
