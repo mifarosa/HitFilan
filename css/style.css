@@ -1253,3 +1253,5 @@ details.ex.lib summary { flex-wrap: nowrap; gap: 12px; }
 .sheet-head .btn { padding: 8px 12px; font-size: 14px; }
 .ed-row.drop-before { box-shadow: 0 -3px 0 var(--accent); }
 .ed-row.drop-after { box-shadow: 0 3px 0 var(--accent); }
+#share-styles { flex-wrap: wrap; overflow: visible; }
+.settings select { max-width: 50%; min-width: 0; }

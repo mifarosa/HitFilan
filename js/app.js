@@ -1139,6 +1139,7 @@ async function drawSharePreview() {
   $('#share-preview').replaceChildren(canvas);
   $('#share-hint').textContent = {
     card: 'Instagram hikâyesi boyutunda (1080×1920).',
+    story: '9:16 hikâye görseli (1080×1920). Ortadaki kare boş: fotoğrafı ya da müzik çıkartmasını Instagram’da oraya koyabilirsin.',
     wide: '16:9 yatay görsel (1920×1080). Ortadaki kare boş: fotoğrafı ya da müzik çıkartmasını Instagram’da oraya koyabilirsin.',
   }[shareStyle] || 'Arkası saydam PNG: kendi fotoğrafının üstüne yapıştırabilirsin.';
 }
@@ -1303,6 +1304,9 @@ initPlans({
 });
 renderHomeGoals();
 initSync({ onStatus: renderSync, onRemoteChange: refreshFromStorage });
+
+// Phone-style portrait only; the lock works in installed/fullscreen contexts and is ignored elsewhere.
+try { screen.orientation?.lock?.('portrait')?.catch(() => {}); } catch { /* unsupported */ }
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   navigator.serviceWorker.register('sw.js').catch(() => {});

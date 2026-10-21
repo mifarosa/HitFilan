@@ -2,12 +2,14 @@
 // exported as PNG. Three styles:
 //   card         1080x1920 story with a sporty background
 //   transparent  1080x1080, no background (a sticker over the user's own photo)
+//   story        1080x1920 (9:16) with an empty square in the middle, same idea as wide
 //   wide         1920x1080 (16:9) with an empty square in the middle for the user's
 //                own photo or Instagram's music sticker
 //   strip        1080x200 one-line pill, transparent around it
 // Input: { name, durationSec, date, hiit: { count, secs } | null }
 export const SHARE_STYLES = [
   { id: 'card', label: 'Arka planlı' },
+  { id: 'story', label: '9:16' },
   { id: 'wide', label: '16:9' },
   { id: 'transparent', label: 'Saydam' },
   { id: 'strip', label: 'Çizgi' },
@@ -225,6 +227,86 @@ function drawCard(d, logo) {
   return c;
 }
 
+// 9:16 picture. The centre square (x 160-920, y 380-1140) stays empty for the user's
+// photo or music sticker; text sits above and below it, inside Instagram's safe zones.
+function drawStory(d, logo) {
+  const W = 1080;
+  const H = 1920;
+  const [c, ctx] = makeCanvas(W, H);
+  const L = lines(d);
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#0a0e13');
+  g.addColorStop(0.55, '#141b23');
+  g.addColorStop(1, '#25140a');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  // Speed lines top-right and an accent band along the bottom, both outside the square
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,.05)';
+  ctx.lineWidth = 3;
+  for (let i = 0; i < 8; i++) {
+    const y = 40 + i * 34;
+    ctx.beginPath();
+    ctx.moveTo(W, y);
+    ctx.lineTo(W - (220 + (i % 4) * 90), y + 70);
+    ctx.stroke();
+  }
+  ctx.restore();
+  const glow = ctx.createRadialGradient(W / 2, H + 80, 40, W / 2, H + 80, 560);
+  glow.addColorStop(0, 'rgba(255,122,26,.30)');
+  glow.addColorStop(1, 'rgba(255,122,26,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = 'rgba(255,122,26,.13)';
+  ctx.beginPath();
+  ctx.moveTo(0, 1790);
+  ctx.lineTo(W, 1730);
+  ctx.lineTo(W, 1790);
+  ctx.lineTo(0, 1850);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = ACCENT;
+  ctx.beginPath();
+  ctx.moveTo(0, 1880);
+  ctx.lineTo(W, 1820);
+  ctx.lineTo(W, 1834);
+  ctx.lineTo(0, 1894);
+  ctx.closePath();
+  ctx.fill();
+
+  // Above the square: brand and tag
+  const cx = W / 2;
+  ctx.font = `900 72px ${FONT}`;
+  const wHit = ctx.measureText('HIT').width;
+  const wFilan = ctx.measureText('FILAN').width;
+  const logoSize = 100;
+  const x0 = cx - (logoSize + 24 + wHit + wFilan) / 2;
+  drawLogo(ctx, logo, x0, 120, logoSize, false);
+  slantText(ctx, 'HIT', x0 + logoSize + 24, 120 + logoSize * 0.74, { size: 72, lean: 0 });
+  slantText(ctx, 'FILAN', x0 + logoSize + 24 + wHit, 120 + logoSize * 0.74, { size: 72, color: ACCENT, lean: 0 });
+  slantText(ctx, 'ANTRENMAN TAMAM', cx, 310, { size: 40, color: ACCENT, align: 'center', lean: 0 });
+
+  // Below the square: minutes, day, HIIT, site
+  ctx.font = `900 260px ${FONT}`;
+  const wNum = ctx.measureText(String(L.minutes)).width;
+  ctx.font = `900 90px ${FONT}`;
+  const wDk = ctx.measureText('DK').width;
+  const nx = cx - (wNum + 20 + wDk) / 2;
+  slantText(ctx, String(L.minutes), nx, 1390, { size: 260, lean: 0 });
+  slantText(ctx, 'DK', nx + wNum + 20, 1390, { size: 90, color: ACCENT, lean: 0 });
+  slantText(ctx, `${L.day} · ${L.date}`, cx, 1470, { size: 52, align: 'center', lean: 0, maxWidth: 940 });
+  if (L.hiit) {
+    ctx.font = `900 46px ${FONT}`;
+    const w = Math.min(900, ctx.measureText(L.hiit).width + 90);
+    ctx.fillStyle = ACCENT;
+    ctx.fillRect(cx - w / 2, 1520, w, 84);
+    slantText(ctx, L.hiit, cx, 1578, { size: 46, color: '#16110c', align: 'center', lean: 0, maxWidth: w - 50 });
+  }
+  slantText(ctx, SITE, cx, 1665, { size: 34, align: 'center', lean: 0, color: 'rgba(255,255,255,.9)' });
+  return c;
+}
+
 // 16:9 picture. The centre square (x 600-1320, y 180-900) stays empty: no text and no
 // shapes, so the user can place a photo or the music sticker there in Instagram.
 function drawWide(d, logo) {
@@ -375,6 +457,7 @@ export async function renderShareCanvas(style, d) {
   const logo = await loadLogo();
   if (style === 'card') return drawCard(d, logo);
   if (style === 'wide') return drawWide(d, logo);
+  if (style === 'story') return drawStory(d, logo);
   if (style === 'strip') return drawStrip(d, logo);
   return drawTransparent(d, logo);
 }
