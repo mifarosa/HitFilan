@@ -1,5 +1,5 @@
 // Offline cache for the app shell. Bump CACHE when shipping changes.
-const CACHE = 'hitfilan-v31';
+const CACHE = 'hitfilan-v32';
 const ASSETS = [
   './',
   'index.html',

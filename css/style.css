@@ -1314,7 +1314,7 @@ details.ex.lib summary { flex-wrap: nowrap; gap: 12px; }
 
 /* ---------- Video dock (YouTube) in the workout screen ---------- */
 .video-dock {
-  flex: none; align-self: center; width: 78%; box-sizing: border-box; margin: 10px 0 0;
+  flex: none; width: 100%; box-sizing: border-box; margin: 10px 0 0;
   border-radius: 18px; overflow: hidden; background: #0b0f14; border: 1px solid var(--line);
   box-shadow: 0 10px 30px rgb(0 0 0 / .45);
 }
@@ -1333,11 +1333,6 @@ details.ex.lib summary { flex-wrap: nowrap; gap: 12px; }
   background: var(--surface-2); color: var(--text); font-size: 17px; touch-action: manipulation;
 }
 /* Portrait: the ring gives way to the player; collapsed it is a slim bar under the timeline. */
-.runner.has-video:not(.video-mini) .ring { width: min(50vw, 24vh, 210px); }
-.runner.has-video:not(.video-mini) .ring-time { font-size: 46px; }
-.runner.has-video:not(.video-mini) .step-label { font-size: 26px; }
-.runner.has-video:not(.video-mini) .step-hint,
-.runner.has-video:not(.video-mini) .targets { display: none; }
 .runner.video-mini .video-dock {
   position: fixed; top: calc(92px + var(--safe-t)); left: 16px; right: 16px; width: auto; margin: 0;
   border-radius: 999px; z-index: 3;
@@ -1363,26 +1358,6 @@ details.ex.lib summary { flex-wrap: nowrap; gap: 12px; }
 
 /* Landscape: the video takes the left column, ring and controls sit on the right. */
 @media (orientation: landscape) and (max-height: 600px) {
-  .runner.has-video:not(.video-mini) {
-    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
-    grid-template-rows: auto auto minmax(0, 1fr) repeat(5, auto) minmax(0, 1fr);
-    grid-template-areas:
-      "top   top"
-      "line  line"
-      "video ."
-      "video tag"
-      "video label"
-      "video ring"
-      "video next"
-      "video controls"
-      "video .";
-    column-gap: clamp(16px, 3vw, 32px);
-  }
-  .runner.has-video:not(.video-mini) .video-dock { grid-area: video; align-self: center; width: 100%; margin: 0; }
-  .runner.has-video:not(.video-mini) .ring { grid-area: ring; width: min(30vh, 22vw, 150px); justify-self: start; margin: 8px 0; }
-  .runner.has-video:not(.video-mini) .ring-time { font-size: clamp(28px, 7vh, 40px); }
-  .runner.has-video:not(.video-mini) .step-label { font-size: clamp(20px, 3.4vw, 28px); margin: 2px 0 4px; }
-  .runner.has-video:not(.video-mini) .controls { margin-top: 8px; }
   /* Collapsed: the normal landscape layout, with the bar tucked in the bottom-left corner. */
   .runner.video-mini .video-dock { top: auto; bottom: 10px; left: 24px; right: auto; width: min(46vw, 380px); align-self: auto; justify-self: auto; }
 }
@@ -1393,3 +1368,57 @@ details.ex.lib summary { flex-wrap: nowrap; gap: 12px; }
 
 /* Long lists: skip rendering cards that are far off screen. */
 .exercise-list > .card.lib { content-visibility: auto; contain-intrinsic-size: auto 84px; }
+
+/* ---------- Workout with a video (.video-on): the video leads, a compact "now" card
+   and the controls sit below. The segmented timeline moves from the top to a thin
+   progress line above the totals. ---------- */
+.runner.video-on { padding-left: 0; padding-right: 0; }
+.runner.video-on > * { margin-left: 16px; margin-right: 16px; }
+.runner.video-on .video-dock { order: 1; margin: 8px 0 0; border-radius: 0; border-left: 0; border-right: 0; box-shadow: none; }
+.runner.video-on .runner-top { order: 0; }
+.runner.video-on .runner-main {
+  order: 2; flex: none; display: grid; grid-template-columns: auto 1fr; grid-template-areas: "ring tag" "ring label" "ring hint"; grid-template-rows: auto auto auto;
+  align-items: center; align-content: center; column-gap: 14px; text-align: left; padding: 12px 14px; margin-top: 12px; min-height: 0;
+  border-radius: 20px; border: 1px solid color-mix(in srgb, var(--lvl) 45%, var(--line));
+  background: color-mix(in srgb, var(--lvl) 13%, var(--surface));
+}
+.runner.video-on .ring { grid-area: ring; width: 92px; }
+.runner.video-on .ring-time { font-size: 26px; }
+.runner.video-on .ring-sub { font-size: 11px; }
+.runner.video-on .step-tag { grid-area: tag; text-align: left; font-size: 13px; align-self: end; }
+.runner.video-on .step-label { grid-area: label; text-align: left; margin: 2px 0 0; font-size: 22px; line-height: 1.15; align-self: start; }
+.runner.video-on:not(.warning) .runner-main { grid-template-areas: "ring tag" "ring label"; }
+.runner.video-on .step-hint { grid-area: hint; display: none; margin: 4px 0 0; min-height: 0; font-size: 14px; text-align: left; }
+.runner.video-on.warning .step-hint { display: block; }
+.runner.video-on .targets, .runner.video-on .runner-visual { display: none; }
+.runner.video-on .next-step { order: 3; margin-top: 10px; }
+.runner.video-on .timeline { order: 4; margin-top: 14px; margin-bottom: 0; }
+.runner.video-on .totals { order: 5; margin-top: 12px; margin-bottom: 8px; }
+.runner.video-on .controls { order: 6; margin-top: auto; padding-top: 6px; }
+.video-title { cursor: pointer; }
+
+@media (orientation: landscape) and (max-height: 600px) {
+  .runner.video-on {
+    grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto auto auto minmax(0, 1fr);
+    grid-template-areas:
+      "top   top"
+      "video ."
+      "video now"
+      "video next"
+      "video controls"
+      "video .";
+    column-gap: clamp(14px, 3vw, 28px);
+    padding-left: calc(16px + env(safe-area-inset-left, 0px));
+    padding-right: calc(16px + env(safe-area-inset-right, 0px));
+  }
+  .runner.video-on > * { margin-left: 0; margin-right: 0; }
+  .runner.video-on .timeline { display: none; } /* the top bar already carries the totals; the video gets the room */
+  .runner.video-on .video-dock { grid-area: video; align-self: center; margin: 0; border-radius: 18px; border: 1px solid var(--line); }
+  .runner.video-on .runner-main { grid-area: now; margin-top: 0; padding: 10px 12px; }
+  .runner.video-on .ring { width: min(22vh, 15vw, 84px); }
+  .runner.video-on .ring-time { font-size: clamp(18px, 5vh, 24px); }
+  .runner.video-on .step-label { font-size: clamp(18px, 3vw, 24px); }
+  .runner.video-on .next-step { grid-area: next; margin-top: 8px; }
+  .runner.video-on .controls { grid-area: controls; margin-top: 8px; padding-top: 0; justify-content: flex-start; }
+}

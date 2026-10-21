@@ -6,7 +6,7 @@ import { loadSettings } from './store.js';
 
 const KEY = 'hitfilan.counter';
 const RING_LEN = 2 * Math.PI * 54;
-const PRESETS = [5, 8, 10, 12, 15, 20];
+const PRESETS = [3, 4, 5, 6, 8, 10, 12, 15, 20];
 const FLASH_MS = 1100;
 
 const $ = (sel, root = document) => root.querySelector(sel);
