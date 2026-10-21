@@ -142,8 +142,12 @@
     </section>
 
     <section id="view-counter" class="view" aria-label="Serbest sayaç">
+      <div class="counter-top">
+        <button type="button" class="counter-iconbtn" id="counter-back" aria-label="Geri">‹</button>
+        <span class="counter-title">SERBEST SAYAÇ</span>
+        <span class="counter-sets" id="counter-sets">SET 0</span>
+      </div>
       <button type="button" class="counter-tap" id="counter-tap" aria-label="Bir artır">
-        <span class="counter-tag">SERBEST SAYAÇ</span>
         <span class="counter-ring">
           <svg viewBox="0 0 120 120" aria-hidden="true">
             <circle class="ring-bg" cx="60" cy="60" r="54"/>
@@ -154,13 +158,20 @@
             <small id="counter-sub">dokun ve say</small>
           </span>
         </span>
+        <span class="counter-done" id="counter-done" hidden>SET TAMAM ✓</span>
       </button>
+      <div class="counter-doses" id="counter-doses" role="group" aria-label="Doz"></div>
       <div class="counter-actions">
-        <button type="button" class="btn ghost" id="counter-dec" aria-label="Bir azalt">−1</button>
-        <button type="button" class="btn ghost" id="counter-reset">Sıfırla</button>
-        <button type="button" class="btn ghost" id="counter-target">Doz koy</button>
-        <button type="button" class="btn ghost" id="counter-back" aria-label="Geri">‹</button>
+        <button type="button" class="counter-btn" id="counter-dec" aria-label="Bir azalt">−1</button>
+        <button type="button" class="counter-btn" id="counter-reset">Sıfırla</button>
       </div>
+      <dialog id="counter-dose-dialog" class="sheet">
+        <form method="dialog" class="sheet-inner" id="counter-dose-form">
+          <h3>Kaç tekrar?</h3>
+          <input type="number" id="counter-dose-input" min="1" max="999" inputmode="numeric" aria-label="Doz">
+          <button type="submit" class="counter-btn primary">Tamam</button>
+        </form>
+      </dialog>
     </section>
 
     <section id="view-nutrition" class="view" aria-label="Beslenme">
