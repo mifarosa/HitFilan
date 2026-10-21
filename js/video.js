@@ -72,10 +72,17 @@ function dock() {
   return $('#video-dock');
 }
 
+// One place decides which layout the workout screen uses.
+function syncMode() {
+  runnerEl.classList.toggle('has-video', !!current);
+  runnerEl.classList.toggle('video-on', !!current && !collapsed);
+  runnerEl.classList.toggle('video-mini', !!current && collapsed);
+}
+
 function setCollapsed(on) {
   collapsed = on;
   dock().classList.toggle('collapsed', on);
-  runnerEl.classList.toggle('video-mini', on);
+  syncMode();
   const btn = $('[data-vact="size"]', dock());
   btn.textContent = on ? '⌃' : '⌄';
   btn.setAttribute('aria-label', on ? 'Büyüt' : 'Küçült');
@@ -118,7 +125,6 @@ async function openVideo(v, title = '') {
   current = { ...v, title };
   const d = dock();
   d.hidden = false;
-  runnerEl.classList.add('has-video');
   $('.video-title b', d).textContent = title || (v.kind === 'playlist' ? 'Çalma listesi' : 'YouTube videosu');
   showError('');
   setCollapsed(false);
@@ -133,11 +139,12 @@ export function closeVideo() {
   player?.destroy?.();
   player = null;
   current = null;
+  collapsed = false;
   const d = dock();
   if (!d) return;
   d.hidden = true;
   $('.video-frame', d).innerHTML = '';
-  runnerEl.classList.remove('has-video', 'video-mini');
+  syncMode();
 }
 
 export function pauseVideo() {
@@ -206,7 +213,7 @@ export function initVideo({ runner }) {
   $('#video-close').addEventListener('click', () => $('#video-sheet').close());
   $('#video-sheet').addEventListener('click', (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });
   dock().addEventListener('click', (e) => {
-    const act = e.target.closest('[data-vact]')?.dataset.vact;
+    const act = e.target.closest('[data-vact]')?.dataset.vact || (e.target.closest('.video-title') ? 'size' : null);
     if (act === 'play') {
       try { player?.getPlayerState?.() === 1 ? player.pauseVideo() : player?.playVideo?.(); } catch { /* not ready */ }
     } else if (act === 'size') setCollapsed(!collapsed);
