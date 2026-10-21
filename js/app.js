@@ -1299,6 +1299,7 @@ initPlans({
   weightKg: () => settings.weightKg,
   resistance: (level) => bikeTarget(level)?.res ?? '',
   defaultReps: () => settings.weightReps,
+  dumbbellKg: () => settings.dumbbellKg,
 });
 renderHomeGoals();
 initSync({ onStatus: renderSync, onRemoteChange: refreshFromStorage });
