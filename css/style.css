@@ -16,6 +16,8 @@
   --radius: 16px;
   --tabbar-h: 64px;
   --safe-b: env(safe-area-inset-bottom, 0px);
+  /* The home indicator needs a little clearance, not the full inset (34 px on an iPhone 13). */
+  --safe-b-use: max(0px, calc(env(safe-area-inset-bottom, 0px) - 18px));
   --safe-t: env(safe-area-inset-top, 0px);
   color-scheme: dark;
 }
@@ -65,7 +67,7 @@ main {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   /* content column max 608px, centered; the scrollbar stays at the screen edge */
-  padding: 0 max(16px, calc((100% - 608px) / 2)) calc(var(--tabbar-h) + var(--safe-b) + 16px);
+  padding: 0 max(16px, calc((100% - 608px) / 2)) calc(var(--tabbar-h) + var(--safe-b-use) + 16px);
 }
 
 .view { display: none; }
@@ -171,8 +173,8 @@ main {
   z-index: 10;
   display: flex;
   justify-content: space-around;
-  height: calc(var(--tabbar-h) + var(--safe-b));
-  padding-bottom: var(--safe-b);
+  height: calc(var(--tabbar-h) + var(--safe-b-use));
+  padding-bottom: var(--safe-b-use);
   background: var(--surface);
   border-top: 1px solid var(--line);
 }
@@ -207,7 +209,7 @@ main {
 .sheet[open] { animation: slide-up .22s ease-out; }
 @keyframes slide-up { from { transform: translateY(40px); opacity: 0; } }
 
-.sheet-inner { padding: 20px 16px calc(16px + var(--safe-b)); }
+.sheet-inner { padding: 20px 16px calc(16px + var(--safe-b-use)); }
 .sheet-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
 .sheet-head h2 { margin: 0; font-size: 22px; }
 .sheet h4 { margin: 20px 0 8px; font-size: 15px; }
@@ -352,7 +354,7 @@ details.ex .variant { color: var(--muted); font-size: 14px; margin-top: 6px; }
   z-index: 20;
   display: flex;
   flex-direction: column;
-  padding: calc(10px + var(--safe-t)) 16px calc(16px + var(--safe-b));
+  padding: calc(10px + var(--safe-t)) 16px calc(16px + var(--safe-b-use));
   background:
     radial-gradient(120% 60% at 50% 0%, color-mix(in srgb, var(--lvl) 35%, transparent), transparent 70%),
     var(--bg);
@@ -401,7 +403,7 @@ details.ex .variant { color: var(--muted); font-size: 14px; margin-top: 6px; }
 }
 .step-label { font-size: clamp(26px, 7vw, 40px); font-weight: 800; margin: 4px 0 12px; letter-spacing: -0.02em; }
 
-.ring { position: relative; width: min(72vw, 42vh, 320px); aspect-ratio: 1; }
+.ring { position: relative; width: min(72vw, calc((100dvh - var(--safe-t) - var(--safe-b-use)) * 0.31), 320px); aspect-ratio: 1; }
 .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
 .ring circle { fill: none; stroke-width: 8; }
 .ring-bg { stroke: var(--surface-2); }
@@ -748,7 +750,7 @@ details.ex .variant { color: var(--muted); font-size: 14px; margin-top: 6px; }
       "ring     controls"
       "ring     .";
     column-gap: clamp(24px, 5vw, 56px);
-    padding: calc(8px + var(--safe-t)) calc(24px + env(safe-area-inset-right, 0px)) calc(10px + var(--safe-b)) calc(24px + env(safe-area-inset-left, 0px));
+    padding: calc(8px + var(--safe-t)) calc(24px + env(safe-area-inset-right, 0px)) calc(10px + var(--safe-b-use)) calc(24px + env(safe-area-inset-left, 0px));
     overflow: hidden;
   }
   .runner-top { grid-area: top; }
@@ -946,7 +948,7 @@ body.editing { overflow: hidden; }
 
 .editor-foot {
   border-top: 1px solid var(--line);
-  padding: 10px 16px calc(10px + var(--safe-b));
+  padding: 10px 16px calc(10px + var(--safe-b-use));
   background: var(--surface);
 }
 .editor-foot .timeline { height: 8px; margin: 0 auto 8px; max-width: 640px; }
@@ -1437,7 +1439,7 @@ details.ex.lib summary { flex-wrap: nowrap; gap: 12px; }
   .runner.video-on .step-label { font-size: clamp(18px, 3vw, 22px); }
   .runner.video-on .targets, .runner.video-on .step-hint { display: none; }
   .runner.video-on .next-step { grid-area: next; margin-top: 8px; }
-  .runner.video-on .controls { grid-area: controls; margin: 0 0 calc(10px + var(--safe-b)); padding-top: 0; justify-content: flex-start; }
+  .runner.video-on .controls { grid-area: controls; margin: 0 0 calc(10px + var(--safe-b-use)); padding-top: 0; justify-content: flex-start; }
 }
 
 /* ---------- Install tip ---------- */
@@ -1447,3 +1449,32 @@ details.ex.lib summary { flex-wrap: nowrap; gap: 12px; }
 .install-tip b { display: block; }
 .install-tip small { color: var(--muted); font-size: 13px; }
 .install-tip .btn { padding: 10px 16px; }
+
+/* Short portrait screens (an iPhone with its safe areas): the video layout must fit, not squeeze. */
+@media (orientation: portrait) and (max-height: 880px) {
+  .runner.video-on .runner-main { min-height: min-content; padding: 10px 14px; margin-top: 8px; }
+  .runner.video-on .ring { width: 96px; }
+  .runner.video-on .ring-time { font-size: 26px; }
+  .runner.video-on .step-label { font-size: 23px; }
+  .runner.video-on .step-hint { display: none; }
+  .runner.video-on .targets { margin-top: 4px; }
+  .runner.video-on .next-step { margin-top: 8px; }
+  .runner.video-on .timeline { margin-top: 10px; }
+  .runner.video-on .totals { margin-top: 8px; margin-bottom: 4px; }
+  .runner.video-on .controls { gap: 22px; }
+  .runner.video-on .controls .icon-btn { width: 48px; height: 48px; }
+  .runner.video-on .play-btn { width: 64px; height: 64px; }
+}
+
+/* Small phones (iPhone SE class): drop the long tip, tighten the rest so the controls stay on screen. */
+@media (orientation: portrait) and (max-height: 720px) {
+  .runner:not(.video-on) .step-hint { display: none; }
+  .runner:not(.video-on).warning .step-hint { display: block; }
+  .runner:not(.video-on) .runner-main { padding: 6px 0; }
+  .runner:not(.video-on) .targets { margin-top: 8px; }
+  .runner:not(.video-on) .totals { margin: 8px 0; }
+  .runner:not(.video-on) .controls .icon-btn { width: 48px; height: 48px; }
+  .runner:not(.video-on) .play-btn { width: 64px; height: 64px; }
+  .runner.video-on .timeline { display: none; } /* the video needs the height; the totals still show progress */
+  .runner.video-on .targets { display: none; }
+}
