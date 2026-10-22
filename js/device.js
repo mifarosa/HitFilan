@@ -10,6 +10,12 @@ const PROFILES = [
 ];
 const FALLBACK = { id: 'generic', ytShift: '0px' };
 const KEY = 'hitfilan.ytshift';
+const FIX_KEY = 'hitfilan.ytfix';
+// How to deal with the YouTube picture offset (try on the phone with ?ytfix=...; ?ytfix=reset clears it):
+//   shift   (default) the iframe starts one inset to the left
+//   nocover while a video is open the page drops viewport-fit=cover, so the iframe sees no inset
+//   none    nothing is done
+let fix = 'shift';
 
 // A ?ytshift=-47 link stores a manual override on this phone (?ytshift=reset clears it), so a value can be tried without a new release.
 function manualShift() {
@@ -22,12 +28,29 @@ function manualShift() {
   } catch { return null; }
 }
 
+function manualFix() {
+  try {
+    const q = new URLSearchParams(location.search).get('ytfix');
+    if (q === 'reset') localStorage.removeItem(FIX_KEY);
+    else if (['shift', 'nocover', 'none'].includes(q)) localStorage.setItem(FIX_KEY, q);
+    return localStorage.getItem(FIX_KEY);
+  } catch { return null; }
+}
+
+// Called when a video opens or closes (only matters for the "nocover" fix).
+export function setVideoOpen(open) {
+  if (fix !== 'nocover') return;
+  const meta = document.querySelector('meta[name="viewport"]');
+  if (meta) meta.content = `width=device-width, initial-scale=1${open ? '' : ', viewport-fit=cover'}`;
+}
+
 export function initDevice() {
+  fix = manualFix() || 'shift';
   const w = Math.min(screen.width, screen.height);
   const h = Math.max(screen.width, screen.height);
   const profile = PROFILES.find((p) => p.match(w, h, navigator.userAgent)) || FALLBACK;
   const manual = manualShift();
-  const shift = manual === null ? profile.ytShift : `${manual}px`;
+  const shift = fix !== 'shift' ? '0px' : manual === null ? profile.ytShift : `${manual}px`;
   const root = document.documentElement;
   root.dataset.device = profile.id;
   root.style.setProperty('--yt-shift', shift);
