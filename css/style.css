@@ -1322,7 +1322,7 @@ details.ex.lib summary { flex-wrap: nowrap; gap: 12px; }
 }
 .video-dock[hidden] { display: none; }
 .video-frame { position: relative; aspect-ratio: 16 / 9; background: #000; }
-.video-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.video-frame iframe { position: absolute; inset: 0 0 0 var(--yt-shift, 0px); width: calc(100% - var(--yt-shift, 0px)); height: 100%; border: 0; }
 .video-dock.err .video-frame { display: none; }
 .video-msg { margin: 0; padding: 10px 14px; font-size: 14px; background: color-mix(in srgb, var(--danger) 18%, var(--surface)); }
 .video-msg a { color: var(--accent); font-weight: 700; white-space: nowrap; }
@@ -1406,8 +1406,10 @@ details.ex.lib summary { flex-wrap: nowrap; gap: 12px; }
     display: grid;
     /* The video column is sized from the height so the 16:9 frame fits edge to edge (no black bars);
        on very wide-short screens the right column keeps about 240px. 60px = bar (57px) + borders. */
+    /* The video dock starts at the screen edge and is wider by the left inset: YouTube's iframe offsets its
+       picture by the inset it sees (iPhone notch side), so the picture lands exactly on the 16:9 area. */
     grid-template-columns:
-      min(calc((100dvh - 60px) * 16 / 9), calc(100vw - 250px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)))
+      calc(min(calc((100dvh - 60px) * 16 / 9), calc(100vw - 250px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px))) + env(safe-area-inset-left, 0px))
       minmax(0, 1fr);
     grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
     grid-template-areas:
@@ -1418,7 +1420,7 @@ details.ex.lib summary { flex-wrap: nowrap; gap: 12px; }
       "video ."
       "video controls";
     column-gap: 14px;
-    padding: 0 calc(14px + env(safe-area-inset-right, 0px)) 0 env(safe-area-inset-left, 0px);
+    padding: 0 calc(14px + env(safe-area-inset-right, 0px)) 0 0;
   }
   .runner.video-on > * { margin-left: 0; margin-right: 0; }
   .runner.video-on .runner-top { margin-top: calc(8px + var(--safe-t)); }
@@ -1429,6 +1431,7 @@ details.ex.lib summary { flex-wrap: nowrap; gap: 12px; }
     border-radius: 0 16px 16px 0; border: 1px solid var(--line); border-left: 0;
   }
   .runner.video-on .video-frame { flex: 1; min-height: 0; aspect-ratio: auto; }
+  .runner.video-on .video-bar { padding-left: calc(12px + env(safe-area-inset-left, 0px)); } /* keep the title clear of the notch */
   /* The totals leave the top bar and sit in the right column, leaning a little to the left. */
   .runner.video-on .totals {
     grid-area: totals; justify-self: stretch; align-self: start; display: grid; grid-template-columns: 1fr 1fr;
