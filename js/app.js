@@ -9,6 +9,7 @@ import { renderGoals, initGoals, todayGoalsHTML } from './goals.js';
 import { renderNutrition, initNutrition, todayKcalHTML } from './nutrition.js';
 import { netBurn } from './nutrition-core.js';
 import { renderCounter, initCounter, counterCardHTML } from './counter.js';
+import { initDevice } from './device.js';
 import { initVideo, closeVideo, pauseVideo } from './video.js';
 import { SHARE_STYLES, renderShareCanvas, shareOrSave } from './share-image.js';
 import {
@@ -19,6 +20,8 @@ import {
   loadSettings, loadPlans, saveSettings, loadHistory, addHistory, updateHistory, removeHistory, clearHistory,
   saveActive, loadActive, clearActive,
 } from './store.js';
+
+initDevice();
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
