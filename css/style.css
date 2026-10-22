@@ -1404,7 +1404,11 @@ details.ex.lib summary { flex-wrap: nowrap; gap: 12px; }
 @media (orientation: landscape) and (max-height: 600px) {
   .runner.video-on {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) clamp(260px, 36vw, 340px);
+    /* The video column is sized from the height so the 16:9 frame fits edge to edge (no black bars);
+       on very wide-short screens the right column keeps about 240px. 60px = bar (57px) + borders. */
+    grid-template-columns:
+      min(calc((100dvh - 60px) * 16 / 9), calc(100vw - 250px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)))
+      minmax(0, 1fr);
     grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
     grid-template-areas:
       "video top"
