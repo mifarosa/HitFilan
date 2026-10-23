@@ -10,6 +10,9 @@ import { renderNutrition, initNutrition, todayKcalHTML } from './nutrition.js';
 import { netBurn } from './nutrition-core.js';
 import { renderCounter, initCounter, counterCardHTML } from './counter.js';
 import { initDevice } from './device.js';
+import {
+  canFullscreen, isFullscreen, enterFullscreen, exitFullscreen, onFullscreenChange, isStandalone,
+} from './fullscreen.js';
 import { initVideo, closeVideo, pauseVideo } from './video.js';
 import { SHARE_STYLES, renderShareCanvas, shareOrSave } from './share-image.js';
 import {
@@ -179,23 +182,68 @@ function renderPlans() {
 
 // In a normal browser tab the browser's own bars stay on screen; installed to the home
 // screen the app runs full screen. Shown once per device, until dismissed.
+// How to lose the browser bars depends on the platform; the card says which way applies here.
+const TIP_DAYS = 14;
+let installPrompt = null; // Android Chrome's deferred "install" prompt
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  installPrompt = e;
+  renderInstallTip();
+});
+
+function installTipKind(ua = navigator.userAgent, maxTouch = navigator.maxTouchPoints) {
+  const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && maxTouch > 1);
+  if (ios) return /CriOS|FxiOS|EdgiOS|OPiOS|GSA|DuckDuckGo/.test(ua) ? 'ios-other' : 'ios-safari';
+  if (/Android/.test(ua)) return 'android';
+  return null;
+}
+
+function tipDismissed() {
+  try {
+    const at = +localStorage.getItem('hitfilan.installTip');
+    return at === 1 || (at > 1 && Date.now() - at < TIP_DAYS * 86400000); // 1 = old "dismissed for good" value
+  } catch { return false; }
+}
+
 function renderInstallTip() {
   const el = $('#home-tip');
-  let hide = false;
-  try {
-    hide = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true
-      || localStorage.getItem('hitfilan.installTip') === '1';
-  } catch { /* storage unavailable: show the tip */ }
+  const kind = installTipKind();
+  const hide = isStandalone() || !kind || tipDismissed() || (isFullscreen() && kind === 'android');
   el.hidden = hide;
   if (hide) return;
+  const text = {
+    'ios-safari': ['Tam ekran kullan', 'Paylaş → “Ana Ekrana Ekle”. Tarayıcı çubukları kaybolur, uygulama daha rahat çalışır.'],
+    'ios-other': ['Tam ekran için Safari', 'Bu tarayıcıda çubuklar gizlenemez. Siteyi Safari’de aç → Paylaş → “Ana Ekrana Ekle”.'],
+    android: ['Uygulamayı yükle', installPrompt
+      ? 'Ana ekrana eklenir ve tarayıcı çubukları olmadan tam ekran açılır.'
+      : 'Menü (⋮) → “Uygulamayı yükle”. Tarayıcı çubukları kaybolur.'],
+  }[kind];
   el.innerHTML = `
-    <div><b>Tam ekran kullan</b><small>Paylaş → “Ana Ekrana Ekle”. Tarayıcı çubukları kaybolur, uygulama daha rahat çalışır.</small></div>
-    <button type="button" class="btn ghost">Tamam</button>`;
-  el.querySelector('button').addEventListener('click', () => {
-    try { localStorage.setItem('hitfilan.installTip', '1'); } catch { /* storage unavailable */ }
+    <div><b>${text[0]}</b><small>${text[1]}</small></div>
+    ${kind === 'android' && installPrompt ? '<button type="button" class="btn primary" data-install>Yükle</button>' : ''}
+    <button type="button" class="btn ghost" data-dismiss>Tamam</button>`;
+  el.querySelector('[data-dismiss]').addEventListener('click', () => {
+    try { localStorage.setItem('hitfilan.installTip', String(Date.now())); } catch { /* storage unavailable */ }
     el.hidden = true;
   });
+  el.querySelector('[data-install]')?.addEventListener('click', async () => {
+    const p = installPrompt;
+    installPrompt = null;
+    await p.prompt();
+    renderInstallTip();
+  });
 }
+
+// Full screen button (Android Chrome, desktop, iPad) and the workout auto full screen.
+function syncFullscreenUi() {
+  const btn = $('#fs-btn');
+  btn.hidden = !canFullscreen();
+  btn.setAttribute('aria-pressed', String(isFullscreen()));
+  $('#auto-fs-row').hidden = !canFullscreen();
+  renderInstallTip();
+}
+$('#fs-btn').addEventListener('click', () => (isFullscreen() ? exitFullscreen() : enterFullscreen()));
+onFullscreenChange(syncFullscreenUi);
 
 const HOME_PLANS = 5;
 
@@ -1015,8 +1063,13 @@ function saveRun(completed) {
   addHistory(entry);
 }
 
+let fsByWorkout = false;
+
 function startRunner(programId, opts, resume = null) {
   unlockAudio(); // must run inside the user's tap
+  // Full screen also needs the tap; only leave it later if the workout was what entered it.
+  fsByWorkout = settings.autoFullscreen && canFullscreen() && !isFullscreen();
+  if (fsByWorkout) enterFullscreen();
   const { name } = programInfo(programId, opts);
   const steps = buildSteps(programId, opts);
   run = {
@@ -1102,6 +1155,8 @@ function startRunner(programId, opts, resume = null) {
 
 function closeRunner() {
   closeVideo();
+  if (fsByWorkout) exitFullscreen();
+  fsByWorkout = false;
   timer?.stop();
   timer = null;
   run = null;
@@ -1306,7 +1361,7 @@ renderResume();
 initGoals();
 initNutrition({ candidates: suggestionCandidates, onStart: openSheet, goto: showView });
 initCounter({ goto: showView });
-renderInstallTip();
+syncFullscreenUi();
 initVideo({ runner });
 renderHomeCounter();
 renderHomeNutrition();

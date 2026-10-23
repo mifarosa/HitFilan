@@ -1,5 +1,6 @@
 // A small YouTube player docked in the workout screen. Loaded lazily: nothing is
 // downloaded or created until the user adds a video.
+import { setVideoOpen } from './device.js';
 import { parseYouTube, watchUrl, thumbUrl, playerErrorText, embedVerdict } from './video-core.js';
 
 const KEY = 'hitfilan.videos';
@@ -77,6 +78,7 @@ function syncMode() {
   runnerEl.classList.toggle('has-video', !!current);
   runnerEl.classList.toggle('video-on', !!current && !collapsed);
   runnerEl.classList.toggle('video-mini', !!current && collapsed);
+  setVideoOpen(!!current && !collapsed);
 }
 
 function setCollapsed(on) {

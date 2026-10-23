@@ -17,6 +17,7 @@ Home Gym PWA App — ev için kondisyon bisikleti zamanlayıcısı ve kuvvet dev
 - Hedefler: 30 günlük squat / şınav / mekik / plank meydan okumaları ve "1 ayda 1000 mekik" gibi kendi toplam hedefin
 - İsteğe bağlı bulut yedeği (Google ile giriş, Firebase)
 - Çevrimdışı çalışır, ana ekrana eklenebilir
+- Tarayıcı çubukları olmadan tam ekran: iPhone'da Safari'den "Ana Ekrana Ekle" (iPhone'da başka yol yok), Android'de uygulamayı yükle (tam ekran açılır) ya da sayfadaki tam ekran düğmesi; antrenman başlayınca otomatik tam ekran ayarı var
 
 ## Çalıştırma
 Derleme adımı yok; herhangi bir statik sunucu yeterli:

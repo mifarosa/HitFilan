@@ -435,7 +435,7 @@ function openForm(source, isNew, onSave, back) {
       <span>${label}${hint ? `<small>${hint}</small>` : ''}</span>
       <div class="stepper-ctrl">
         <button type="button" data-step="${key}:-1" aria-label="${label} azalt">−</button>
-        <input type="number" inputmode="decimal" data-field="${key}" aria-label="${label}">
+        <input type="number" inputmode="decimal" step="any" data-field="${key}" aria-label="${label}">
         <button type="button" data-step="${key}:1" aria-label="${label} artır">+</button>
       </div>
     </div>`;

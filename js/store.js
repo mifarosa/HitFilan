@@ -36,6 +36,7 @@ export const DEFAULT_SETTINGS = {
   beeps: true,
   voice: false,
   vibrate: true,
+  autoFullscreen: true, // enter full screen when a workout starts (where the browser allows it)
   wakeLock: true,
 };
 
