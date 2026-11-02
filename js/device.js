@@ -16,6 +16,7 @@ const FIX_KEY = 'hitfilan.ytfix';
 //   nocover while a video is open the page drops viewport-fit=cover, so the iframe sees no inset
 //   none    nothing is done
 let fix = 'shift';
+let defaultShift = '0px'; // the profile's own shift, used when no manual value is stored
 
 // A ?ytshift=-47 link stores a manual override on this phone (?ytshift=reset clears it), so a value can be tried without a new release.
 function manualShift() {
@@ -50,9 +51,30 @@ export function initDevice() {
   const h = Math.max(screen.width, screen.height);
   const profile = PROFILES.find((p) => p.match(w, h, navigator.userAgent)) || FALLBACK;
   const manual = manualShift();
-  const shift = fix !== 'shift' ? '0px' : manual === null ? profile.ytShift : `${manual}px`;
+  defaultShift = fix === 'shift' ? profile.ytShift : '0px';
   const root = document.documentElement;
   root.dataset.device = profile.id;
-  root.style.setProperty('--yt-shift', shift);
+  // A value the user set (slider or link) always wins over the profile.
+  root.style.setProperty('--yt-shift', manual === null ? defaultShift : `${manual}px`);
   return profile;
+}
+
+// The shift in effect, in px (a probe element resolves env() and calc()).
+export function currentShiftPx() {
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:absolute;visibility:hidden;width:0;height:0;margin-left:var(--yt-shift,0px)';
+  document.body.append(probe);
+  const px = parseFloat(getComputedStyle(probe).marginLeft) || 0;
+  probe.remove();
+  return Math.round(px);
+}
+
+// Sets the sideways shift of the YouTube picture (px; null = back to the profile's value) and remembers it.
+export function setShift(px) {
+  try {
+    if (px === null) localStorage.removeItem(KEY);
+    else localStorage.setItem(KEY, String(px));
+  } catch { /* storage unavailable: the shift only lasts for this visit */ }
+  document.documentElement.style.setProperty('--yt-shift', px === null ? defaultShift : `${px}px`);
+  document.dispatchEvent(new CustomEvent('hitfilan:shift'));
 }

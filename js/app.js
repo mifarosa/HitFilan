@@ -9,7 +9,7 @@ import { renderGoals, initGoals, todayGoalsHTML } from './goals.js';
 import { renderNutrition, initNutrition, todayKcalHTML } from './nutrition.js';
 import { netBurn } from './nutrition-core.js';
 import { renderCounter, initCounter, counterCardHTML } from './counter.js';
-import { initDevice } from './device.js';
+import { initDevice, currentShiftPx, setShift } from './device.js';
 import {
   canFullscreen, isFullscreen, enterFullscreen, exitFullscreen, onFullscreenChange, isStandalone,
 } from './fullscreen.js';
@@ -244,6 +244,18 @@ function syncFullscreenUi() {
 }
 $('#fs-btn').addEventListener('click', () => (isFullscreen() ? exitFullscreen() : enterFullscreen()));
 onFullscreenChange(syncFullscreenUi);
+
+// Settings slider for the sideways position of the YouTube picture (same value as the ↔ slider on the video).
+const shiftInput = $('#set-yt-shift');
+const showShiftSetting = () => {
+  const px = currentShiftPx();
+  shiftInput.value = px;
+  shiftInput.nextElementSibling.textContent = `${px} px`;
+};
+shiftInput.addEventListener('input', () => setShift(+shiftInput.value));
+document.addEventListener('hitfilan:shift', showShiftSetting);
+window.addEventListener('resize', showShiftSetting); // the notch inset changes with the orientation
+showShiftSetting();
 
 const HOME_PLANS = 5;
 
