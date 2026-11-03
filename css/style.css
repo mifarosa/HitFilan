@@ -1322,6 +1322,7 @@ details.ex.lib summary { flex-wrap: nowrap; gap: 12px; }
   border-radius: 18px; overflow: hidden; background: #0b0f14; border: 1px solid var(--line);
   box-shadow: 0 10px 30px rgb(0 0 0 / .45);
 }
+.video-dock { position: relative; }
 .video-dock[hidden] { display: none; }
 .video-frame { position: relative; aspect-ratio: 16 / 9; background: #000; }
 .video-frame iframe { position: absolute; inset: 0 0 0 var(--yt-shift, 0px); width: calc(100% - var(--yt-shift, 0px)); height: 100%; border: 0; }
@@ -1346,6 +1347,20 @@ details.ex.lib summary { flex-wrap: nowrap; gap: 12px; }
 .runner.video-mini .video-bar button { width: 40px; height: 40px; }
 .runner.video-mini .runner-main { padding-top: 64px; } /* room for the bar (landscape ignores it: display: contents) */
 
+/* Slider that moves the YouTube picture sideways; floats over the bottom of the video so the effect shows live. */
+.video-align {
+  position: absolute; left: 8px; right: 8px; bottom: 66px; z-index: 2; display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; border-radius: 12px; background: rgb(16 20 24 / .88); border: 1px solid var(--line);
+}
+.video-align[hidden] { display: none; }
+.video-align input { flex: 1; min-width: 0; }
+.video-align output { min-width: 34px; text-align: right; font-size: 13px; font-variant-numeric: tabular-nums; }
+.video-align button { height: 32px; min-width: 32px; padding: 0 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); font-size: 13px; }
+.shift-ctrl { display: flex; align-items: center; gap: 8px; min-width: 150px; }
+.shift-ctrl input { flex: 1; min-width: 0; }
+.shift-ctrl output { min-width: 34px; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+/* The shift only exists for the landscape notch offset. */
+@media (orientation: portrait) { .video-frame iframe { inset: 0; width: 100%; } }
 .video-form { display: flex; gap: 8px; margin: 14px 0 6px; }
 .video-form input {
   flex: 1; min-width: 0; height: 56px; padding: 0 14px; border-radius: 14px; border: 1px solid var(--line);

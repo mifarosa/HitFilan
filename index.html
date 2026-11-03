@@ -290,6 +290,10 @@
           <span>Titreşim</span>
           <input type="checkbox" name="vibrate">
         </label>
+        <div class="row" id="yt-shift-row">
+          <span>Video konumu<small>iPhone’da yatay videonun yana kaymasını düzeltir. Videoyu açıp ↔ tuşuyla canlı da ayarlayabilirsin.</small></span>
+          <div class="shift-ctrl"><input type="range" id="set-yt-shift" min="-120" max="120" step="1" aria-label="Video konumu"><output></output></div>
+        </div>
         <label class="row switch" id="auto-fs-row" hidden>
           <span>Antrenmanda tam ekran<small>Başlatınca tarayıcı çubukları gizlenir</small></span>
           <input type="checkbox" name="autoFullscreen">
@@ -416,10 +420,18 @@
       <p class="video-msg" hidden></p>
       <div class="video-bar">
         <div class="video-title"><b></b><small>YouTube</small></div>
+        <button type="button" data-vact="align" aria-label="Videoyu yana kaydır">↔</button>
         <button type="button" data-vact="play" aria-label="Oynat">▶</button>
         <button type="button" data-vact="size" aria-label="Küçült">⌄</button>
         <button type="button" data-vact="swap" aria-label="Videoyu değiştir">⇄</button>
         <button type="button" data-vact="close" aria-label="Videoyu kapat">✕</button>
+      </div>
+      <div class="video-align" hidden>
+        <button type="button" data-align="-1" aria-label="Sola">−</button>
+        <input type="range" min="-120" max="120" step="1" aria-label="Video konumu">
+        <button type="button" data-align="1" aria-label="Sağa">+</button>
+        <output></output>
+        <button type="button" data-align="reset">Sıfırla</button>
       </div>
     </div>
 

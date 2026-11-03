@@ -1,6 +1,6 @@
 // A small YouTube player docked in the workout screen. Loaded lazily: nothing is
 // downloaded or created until the user adds a video.
-import { setVideoOpen } from './device.js';
+import { setVideoOpen, currentShiftPx, setShift } from './device.js';
 import { parseYouTube, watchUrl, thumbUrl, playerErrorText, embedVerdict } from './video-core.js';
 
 const KEY = 'hitfilan.videos';
@@ -145,6 +145,7 @@ export function closeVideo() {
   const d = dock();
   if (!d) return;
   d.hidden = true;
+  $('.video-align', d).hidden = true;
   $('.video-frame', d).innerHTML = '';
   syncMode();
 }
@@ -214,7 +215,26 @@ export function initVideo({ runner }) {
   });
   $('#video-close').addEventListener('click', () => $('#video-sheet').close());
   $('#video-sheet').addEventListener('click', (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });
+  // Sideways shift of the picture (iPhone landscape offset): slider, +/- and reset.
+  const align = $('.video-align', dock());
+  const showShift = () => {
+    const px = currentShiftPx();
+    $('input', align).value = px;
+    $('output', align).textContent = px;
+  };
+  $('input', align).addEventListener('input', (e) => setShift(+e.target.value));
+  document.addEventListener('hitfilan:shift', showShift);
+  align.addEventListener('click', (e) => {
+    const a = e.target.closest('[data-align]')?.dataset.align;
+    if (a === 'reset') setShift(null);
+    else if (a) setShift(Math.max(-120, Math.min(120, currentShiftPx() + +a)));
+  });
   dock().addEventListener('click', (e) => {
+    if (e.target.closest('[data-vact="align"]')) {
+      align.hidden = !align.hidden;
+      if (!align.hidden) showShift();
+      return;
+    }
     const act = e.target.closest('[data-vact]')?.dataset.vact || (e.target.closest('.video-title') ? 'size' : null);
     if (act === 'play') {
       try { player?.getPlayerState?.() === 1 ? player.pauseVideo() : player?.playVideo?.(); } catch { /* not ready */ }
