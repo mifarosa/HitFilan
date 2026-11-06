@@ -36,22 +36,42 @@ export async function setupNotifications(): Promise<boolean> {
   }
 }
 
-export async function cancelCues() {
+// Every change goes through one queue, so a cancel can never overlap with a schedule that is still adding
+// notifications (that overlap left old cues behind after pause, skip or close). A newer call also makes an
+// older, unfinished schedule stop adding at once.
+let queue: Promise<void> = Promise.resolve();
+let generation = 0;
+
+function enqueue(job: () => Promise<void>): Promise<void> {
+  queue = queue.then(job, job);
+  return queue;
+}
+
+async function cancelAll() {
   try { await Notifications.cancelAllScheduledNotificationsAsync(); } catch { /* none scheduled */ }
 }
 
-export async function scheduleCues(cues: PlannedCue[]) {
-  try {
-    await Notifications.cancelAllScheduledNotificationsAsync();
+export function cancelCues(): Promise<void> {
+  generation += 1;
+  return enqueue(cancelAll);
+}
+
+export function scheduleCues(cues: PlannedCue[]): Promise<void> {
+  const mine = ++generation;
+  return enqueue(async () => {
+    await cancelAll();
     for (const cue of cues) {
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: cue.title,
-          body: cue.body,
-          sound: Platform.OS === 'ios' ? (CUSTOM_SOUNDS ? `${cue.sound}.wav` : 'default') : undefined,
-        },
-        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: new Date(cue.at), channelId: `cue-${cue.sound}` },
-      });
+      if (mine !== generation) return; // a newer plan (or a cancel) took over
+      try {
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: cue.title,
+            body: cue.body,
+            sound: Platform.OS === 'ios' ? (CUSTOM_SOUNDS ? `${cue.sound}.wav` : 'default') : undefined,
+          },
+          trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: new Date(cue.at), channelId: `cue-${cue.sound}` },
+        });
+      } catch { /* notifications are a bonus: the workout runs without them */ }
     }
-  } catch { /* notifications are a bonus: the workout runs without them */ }
+  });
 }
