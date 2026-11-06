@@ -86,7 +86,7 @@ export default function Workout() {
     const availW = width - insets.left - insets.right;
     const { videoW, cardW } = sideLayout(sideMode, availW, availH);
     const videoH = (videoW * 9) / 16;
-    const video = <VideoDock link={link} width={videoW} flat fixedRender={720} />;
+    const video = <VideoDock link={link} width={videoW} flat />;
     body = (
       <View style={styles.landFull}>
         {sideMode === 'overlay' ? (
@@ -107,7 +107,7 @@ export default function Workout() {
         )}
         {__DEV__ ? (
           <Text style={styles.diag} pointerEvents="none">
-            {`video ${Math.round(videoW)}×${Math.round(videoH)} · kart ${Math.round(cardW)} · ${Math.round(width)}×${Math.round(height)}`}
+            {`mod ${sideMode} · video ${Math.round(videoW)}×${Math.round(videoH)} · kart ${Math.round(cardW)} · ekran ${Math.round(width)}×${Math.round(height)}`}
           </Text>
         ) : null}
       </View>
@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
   pillText: { color: colors.text, fontWeight: '600', fontSize: 14 },
   body: { flex: 1, justifyContent: 'space-between', paddingTop: 6 },
   landFull: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
-  diag: { position: 'absolute', left: 8, bottom: 0, color: 'rgba(255,255,255,0.7)', fontSize: 10, backgroundColor: 'rgba(0,0,0,0.4)', paddingHorizontal: 6 },
+  diag: { position: 'absolute', left: 8, bottom: 0, color: '#fff', fontSize: 12, backgroundColor: 'rgba(0,0,0,0.4)', paddingHorizontal: 6 },
   videoCol: { justifyContent: 'center' },
   rightCol: { paddingVertical: 4, marginRight: 16, alignSelf: 'stretch' },
   cardWrap: { flex: 1, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10 },

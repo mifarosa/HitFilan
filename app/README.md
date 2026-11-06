@@ -29,8 +29,9 @@ sounds and some native modules need a development build: `npx eas-cli build -p i
   Sideways, only the card is shown. The 1 2 3 4 buttons (bottom centre of the card) or a tap on it pick the size
   (`src/ui/sideLayout.ts`): card beside the video full, half or quarter, or 4 = no card, the info sits on the video like a
   subtitle (`src/ui/Subtitle.tsx`). The video takes the room the card gives up. A rep step shows a check button.
-  The player is drawn at a fixed 720 px and scaled (`fixedRender` in `VideoDock`), so resizing never re-lays out the
-  WebView. In development builds a small line shows the video and card sizes.
+  The YouTube page keeps the size it was created with, so when the video width changes `VideoDock` builds the player again
+  at the new size and starts it where the old one was; YouTube's own full screen button is off (it would cover the app).
+  In development builds a small line shows the mode, video, card and screen sizes.
 - `tools/make-sounds.mjs` writes the cue sounds (same notes as the web app).
 
 ## Ported so far

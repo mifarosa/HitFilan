@@ -1,8 +1,8 @@
 // The YouTube player of the workout screen. A pasted link is checked first (does the video exist, may it
 // be embedded); problems show a clear message and a way out to the YouTube app.
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
-import YoutubePlayer from 'react-native-youtube-iframe';
+import YoutubePlayer, { type YoutubeIframeRef } from 'react-native-youtube-iframe';
 import { embedVerdict, playerErrorText, watchUrl, type YouTubeLink } from '@/shared';
 import { colors } from '@/theme';
 
@@ -21,14 +21,15 @@ interface Props {
   link: YouTubeLink;
   width: number; // the player is 16:9 at this width
   flat?: boolean; // edge to edge: no rounded corners
-  // Draw the player at this fixed width and scale it down to `width`. The page inside the WebView is then
-  // never laid out again, so the video follows size changes at once instead of keeping its first size.
-  fixedRender?: number;
 }
 
-export function VideoDock({ link, width, flat, fixedRender }: Props) {
+export function VideoDock({ link, width, flat }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [playing, setPlaying] = useState(true);
+  const player = useRef<YoutubeIframeRef>(null);
+  // The page inside the WebView keeps the size it was created with, so a new width means a new player:
+  // it is built again at the new size and starts where the old one was.
+  const [built, setBuilt] = useState({ width, start: 0 });
 
   useEffect(() => {
     let alive = true;
@@ -37,6 +38,17 @@ export function VideoDock({ link, width, flat, fixedRender }: Props) {
     checkEmbeddable(link).then((e) => { if (alive) setError(e); });
     return () => { alive = false; };
   }, [link]);
+
+  useEffect(() => {
+    if (Math.round(width) === Math.round(built.width)) return;
+    let alive = true;
+    (async () => {
+      let at = 0;
+      try { at = (await player.current?.getCurrentTime()) ?? 0; } catch { /* not ready: start over */ }
+      if (alive) setBuilt({ width, start: Math.max(0, Math.floor(at)) });
+    })();
+    return () => { alive = false; };
+  }, [width, built.width]);
 
   if (error) {
     return (
@@ -48,27 +60,21 @@ export function VideoDock({ link, width, flat, fixedRender }: Props) {
       </View>
     );
   }
-  const renderW = fixedRender ?? width;
-  const renderH = (renderW * 9) / 16;
-  const player = (
-    <YoutubePlayer
-      height={renderH}
-      width={renderW}
-      videoId={link.id}
-      play={playing}
-      onChangeState={(state: string) => { if (state === 'ended') setPlaying(false); }}
-      onError={(code: string) => setError(playerErrorText(code === 'video_not_found' ? 100 : code === 'embed_not_allowed' ? 150 : 0))}
-      webViewProps={{ allowsInlineMediaPlayback: true, mediaPlaybackRequiresUserAction: false }}
-      initialPlayerParams={{ rel: false, modestbranding: true }}
-    />
-  );
   return (
     <View style={[styles.player, flat && { borderRadius: 0 }, { width, height: (width * 9) / 16 }]}>
-      {fixedRender ? (
-        <View style={{ width: renderW, height: renderH, transformOrigin: 'top left', transform: [{ scale: width / renderW }] }}>
-          {player}
-        </View>
-      ) : player}
+      <YoutubePlayer
+        key={Math.round(built.width)}
+        ref={player}
+        height={(built.width * 9) / 16}
+        width={built.width}
+        videoId={link.id}
+        play={playing}
+        onChangeState={(state: string) => { if (state === 'ended') setPlaying(false); }}
+        onError={(code: string) => setError(playerErrorText(code === 'video_not_found' ? 100 : code === 'embed_not_allowed' ? 150 : 0))}
+        webViewProps={{ allowsInlineMediaPlayback: true, mediaPlaybackRequiresUserAction: false }}
+        // No YouTube full screen button: it covers the app, and our own info with it. The 4th size does the job.
+        initialPlayerParams={{ rel: false, modestbranding: true, preventFullScreen: true, start: built.start }}
+      />
     </View>
   );
 }
