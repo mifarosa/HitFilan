@@ -1,9 +1,14 @@
 // Schedules the cues as local notifications, so the phone plays them with the screen locked.
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import type { PlannedCue } from './cuePlan';
 
 const SOUNDS = ['up', 'down', 'warn', 'finish'] as const;
+
+// Expo Go has no custom notification sounds (they are bundled by the config plugin into a real build),
+// and asking for one logs an error per sound. There the notifications use the phone's default sound.
+const CUSTOM_SOUNDS = Constants.executionEnvironment !== ExecutionEnvironment.StoreClient;
 
 export async function setupNotifications(): Promise<boolean> {
   try {
@@ -18,7 +23,7 @@ export async function setupNotifications(): Promise<boolean> {
         await Notifications.setNotificationChannelAsync(`cue-${name}`, {
           name: `Antrenman uyarısı (${name})`,
           importance: Notifications.AndroidImportance.HIGH,
-          sound: `${name}.wav`,
+          sound: CUSTOM_SOUNDS ? `${name}.wav` : 'default',
           vibrationPattern: [0, 200, 100, 200],
         });
       }
@@ -40,7 +45,11 @@ export async function scheduleCues(cues: PlannedCue[]) {
     await Notifications.cancelAllScheduledNotificationsAsync();
     for (const cue of cues) {
       await Notifications.scheduleNotificationAsync({
-        content: { title: cue.title, body: cue.body, sound: Platform.OS === 'ios' ? `${cue.sound}.wav` : undefined },
+        content: {
+          title: cue.title,
+          body: cue.body,
+          sound: Platform.OS === 'ios' ? (CUSTOM_SOUNDS ? `${cue.sound}.wav` : 'default') : undefined,
+        },
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: new Date(cue.at), channelId: `cue-${cue.sound}` },
       });
     }
