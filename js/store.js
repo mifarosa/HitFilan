@@ -85,7 +85,8 @@ function stamp(ids, deleted = false) {
   const t = Date.now();
   for (const id of ids) meta[id] = deleted ? { t, del: true } : { t };
   write(META_KEY, meta);
-  if (typeof window !== 'undefined') {
+  // Browsers only: React Native has a `window` but neither dispatchEvent nor CustomEvent.
+  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function' && typeof CustomEvent === 'function') {
     window.dispatchEvent(new CustomEvent('hitfilan:changed', { detail: ids }));
   }
 }

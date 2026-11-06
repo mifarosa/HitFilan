@@ -58,6 +58,23 @@ describe('storage adapter', () => {
   });
 });
 
+describe('React Native environment', () => {
+  it('saves without window.dispatchEvent / CustomEvent (a phone has a window, but not those)', () => {
+    const g = globalThis as Record<string, unknown>;
+    const saved = { window: g.window, CustomEvent: g.CustomEvent };
+    g.window = {}; // like React Native: window exists, dispatchEvent does not
+    g.CustomEvent = undefined;
+    try {
+      expect(() => saveSettings({ ...loadSettings(), bikeId: 'bike50' })).not.toThrow();
+      expect(loadSettings().bikeId).toBe('bike50');
+      expect(() => addHistory({ id: 'rn1', programId: 'bike40' })).not.toThrow();
+    } finally {
+      g.window = saved.window;
+      g.CustomEvent = saved.CustomEvent;
+    }
+  });
+});
+
 describe('SequenceTimer (shared)', () => {
   it('catches up on step boundaries after a long pause in ticks', () => {
     vi.useFakeTimers();
