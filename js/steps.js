@@ -210,6 +210,19 @@ export function estimateKcal(steps, weightKg, doneSeconds = Infinity) {
   return Math.round(kcal);
 }
 
+// A finished (or stopped) workout as stored in the history.
+export function historyEntry(programId, name, startedAt, steps, elapsed, completed, weightKg) {
+  return {
+    id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    programId,
+    name,
+    date: startedAt,
+    durationSec: Math.round(elapsed),
+    kcal: estimateKcal(steps, weightKg, elapsed),
+    completed,
+  };
+}
+
 export function formatTime(totalSec) {
   const s = Math.max(0, Math.ceil(totalSec));
   const m = Math.floor(s / 60);

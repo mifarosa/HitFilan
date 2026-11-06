@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "HitFilan",
+    "slug": "hitfilan",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "scheme": "hitfilan",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#101418",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.mifarosa.hitfilan",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleLocalizations": ["tr", "en"]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#101418",
+        "foregroundImage": "./assets/android-icon-foreground.png"
+      },
+      "package": "com.mifarosa.hitfilan",
+      "permissions": ["VIBRATE", "WAKE_LOCK", "POST_NOTIFICATIONS", "SCHEDULE_EXACT_ALARM"]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      [
+        "expo-notifications",
+        {
+          "color": "#ff7a1a",
+          "sounds": ["./assets/sounds/up.wav", "./assets/sounds/down.wav", "./assets/sounds/warn.wav", "./assets/sounds/finish.wav"]
+        }
+      ],
+      [
+        "expo-splash-screen",
+        { "backgroundColor": "#101418", "image": "./assets/splash-icon.png", "imageWidth": 160 }
+      ]
+    ],
+    "owner": "mifarosacom"
+  }
+}

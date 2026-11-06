@@ -1,0 +1,31 @@
+name: App (Expo)
+
+on:
+  push:
+    branches: [main, "claude/**"]
+    paths: ["app/**", "js/**", ".github/workflows/app.yml"]
+  pull_request:
+    paths: ["app/**", "js/**", ".github/workflows/app.yml"]
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      # Checks that everything bundles for both platforms.
+      - run: npx expo export --platform ios --output-dir /tmp/export-ios
+        env: { CI: "1", EXPO_NO_TELEMETRY: "1" }
+      - run: npx expo export --platform android --output-dir /tmp/export-android
+        env: { CI: "1", EXPO_NO_TELEMETRY: "1" }

@@ -50,5 +50,8 @@ Ayarlar → **Bulut yedeği** ile Google hesabıyla giriş yapılınca antrenman
 5. **Firestore → Rules** → `firestore.rules` dosyasını yapıştır → **Publish**.
 6. **Project settings → General → Your apps → Web (`</>`)** → uygulama adı `HitFilan` → kaydet; gösterilen `firebaseConfig` nesnesini `js/firebase-config.js` içine koy.
 
+## Mobil uygulama (iPhone ve Android)
+`app/` klasöründe Expo (React Native) ile yazılan yerel uygulama var; web'in düz JS mantığını (`js/`) paylaşır. Kurulum ve çalışma şekli: [app/README.md](app/README.md).
+
 ## Kaynaklar
 Hareket fotoğrafları [free-exercise-db](https://github.com/yuhonas/free-exercise-db) projesinden alınmıştır (Unlicense, kamu malı). Görseller 480 px WebP'ye küçültülüp `img/ex/` altında saklanır.
