@@ -8,7 +8,7 @@ import { LEVELS, formatTime, loadSettings } from '@/shared';
 import { colors, levelColor } from '@/theme';
 import { roundedFrame } from './squarePath';
 
-export function SquareCard({ view }: { view: WorkoutView }) {
+export function SquareCard({ view, hint }: { view: WorkoutView; hint?: string }) {
   const [box, setBox] = useState({ w: 0, h: 0 });
   const onLayout = (e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
@@ -53,6 +53,7 @@ export function SquareCard({ view }: { view: WorkoutView }) {
         </Text>
         <Text style={[styles.name, { fontSize: Math.max(18, Math.min(30, short * 0.12)) }]} numberOfLines={2}>{step.label}</Text>
         {res != null && rpm ? <Text style={styles.target}>Direnç {res} · {rpm} rpm</Text> : null}
+        {hint ? <Text style={styles.hint}>{hint}</Text> : null}
         {view.next ? (
           <Text style={styles.next} numberOfLines={1}>
             Sıradaki: {view.next.label} · {view.next.open ? `${view.next.reps} tekrar` : formatTime(view.next.dur)}
@@ -70,5 +71,6 @@ const styles = StyleSheet.create({
   time: { fontWeight: '800', fontVariant: ['tabular-nums'], includeFontPadding: false },
   name: { color: colors.text, fontWeight: '800', textAlign: 'center' },
   target: { color: colors.text, fontSize: 14, fontWeight: '600', marginTop: 4 },
+  hint: { color: colors.accent, fontSize: 14, fontWeight: '700', marginTop: 6 },
   next: { color: colors.muted, fontSize: 13, marginTop: 2 },
 });
