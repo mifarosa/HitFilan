@@ -9,6 +9,7 @@ import { LEVELS, formatTime, loadSettings, parseYouTube, type YouTubeLink } from
 import { colors, levelColor } from '@/theme';
 import { Controls } from '@/ui/Controls';
 import { Ring } from '@/ui/Ring';
+import { SquareCard } from '@/ui/SquareCard';
 import { Totals } from '@/ui/Totals';
 import { VideoDock } from '@/ui/VideoDock';
 
@@ -43,19 +44,26 @@ export default function Workout() {
     ]);
 
   const landscape = width > height;
-  const pad = { paddingTop: insets.top + 6, paddingBottom: insets.bottom + 8, paddingLeft: insets.left + 16, paddingRight: insets.right + 16 };
+  const fullBleed = !!link; // with a video the page is used edge to edge; the pieces add their own margins
+  const pad = {
+    paddingTop: insets.top + 6,
+    paddingBottom: insets.bottom + 8,
+    paddingLeft: fullBleed ? (landscape ? insets.left : 0) : insets.left + 16,
+    paddingRight: fullBleed ? (landscape ? insets.right : 0) : insets.right + 16,
+  };
   const color = levelColor(view.step.level);
 
-  const topBar = (
-    <View style={styles.topBar}>
-      <Pressable style={styles.pill} onPress={confirmEnd}><Text style={styles.pillText}>✕ Bitir</Text></Pressable>
-      <Text style={styles.title} numberOfLines={1}>{view.name}</Text>
-      <Pressable style={styles.pill} onPress={w.toggleMute}><Text style={styles.pillText}>{w.muted ? '🔇' : '🔊'}</Text></Pressable>
+  const pills = (compact: boolean) => (
+    <>
+      <Pressable style={[styles.pill, compact && styles.pillSmall]} onPress={confirmEnd}><Text style={styles.pillText}>✕ Bitir</Text></Pressable>
+      {compact ? <View style={{ flex: 1 }} /> : <Text style={styles.title} numberOfLines={1}>{view.name}</Text>}
+      <Pressable style={[styles.pill, compact && styles.pillSmall]} onPress={w.toggleMute}><Text style={styles.pillText}>{w.muted ? '🔇' : '🔊'}</Text></Pressable>
       {link
-        ? <Pressable style={styles.pill} onPress={() => setLink(null)}><Text style={styles.pillText}>Videoyu kapat</Text></Pressable>
+        ? <Pressable style={[styles.pill, compact && styles.pillSmall]} onPress={() => setLink(null)}><Text style={styles.pillText}>{compact ? 'Kapat' : 'Videoyu kapat'}</Text></Pressable>
         : <Pressable style={styles.pill} onPress={() => setPasteOpen(true)}><Text style={styles.pillText}>Video</Text></Pressable>}
-    </View>
+    </>
   );
+  const topBar = <View style={[styles.topBar, fullBleed && !landscape && { paddingHorizontal: 16 }]}>{pills(false)}</View>;
 
   const controls = (small: boolean) => (
     <Controls running={view.running} open={view.step.open === true} small={small} onPrev={w.prev} onToggle={w.toggle} onNext={w.next} />
@@ -64,19 +72,18 @@ export default function Workout() {
 
   let body: React.ReactNode;
   if (link && landscape) {
-    // Ring on the left, the video in the middle (16:9, sized from the height), totals and buttons on the right.
-    const availH = height - pad.paddingTop - pad.paddingBottom - 56;
-    const sideW = 128;
-    const videoW = Math.max(160, Math.min((availH - 6) * (16 / 9), width - pad.paddingLeft - pad.paddingRight - sideW * 2 - 24));
+    // Video on the left, edge to edge and as tall as the screen allows (16:9); on the right the actions,
+    // the card that fills the rest, the totals and the buttons.
+    const availH = height - insets.top - insets.bottom - 12;
+    const availW = width - insets.left - insets.right;
+    const videoW = Math.max(180, Math.min(availH * (16 / 9), availW - 240));
     body = (
-      <View style={styles.landRow}>
-        <View style={[styles.side, { width: sideW }]}>
-          <Text style={styles.sideLabel} numberOfLines={1}>{view.step.label}</Text>
-          <Ring size={sideW - 18} progress={view.progress} color={color} time={time} warn={view.warn} />
-        </View>
-        <View style={styles.center}><VideoDock link={link} width={videoW} /></View>
-        <View style={[styles.side, { width: sideW + 12, gap: 10 }]}>
-          <Totals view={view} clock={clock} box />
+      <View style={styles.landFull}>
+        <View style={[styles.videoCol, { width: videoW }]}><VideoDock link={link} width={videoW} flat /></View>
+        <View style={styles.rightCol}>
+          <View style={styles.actionsRow}>{pills(true)}</View>
+          <SquareCard view={view} />
+          <Totals view={view} clock={clock} />
           {controls(true)}
         </View>
       </View>
@@ -84,14 +91,9 @@ export default function Workout() {
   } else if (link) {
     body = (
       <>
-        <VideoDock link={link} width={width - pad.paddingLeft - pad.paddingRight} />
-        <View style={styles.rowFill}>
-          <View style={styles.half}>
-            <Ring size={Math.min(150, (width - 48) / 2)} progress={view.progress} color={color} time={time} warn={view.warn} />
-            <Text style={styles.sideLabel} numberOfLines={1}>{view.step.label}</Text>
-          </View>
-          <View style={styles.half}><Totals view={view} clock={clock} box /></View>
-        </View>
+        <VideoDock link={link} width={width} flat />
+        <View style={styles.cardWrap}><SquareCard view={view} /></View>
+        <View style={styles.totalsWrap}><Totals view={view} clock={clock} /></View>
         {controls(false)}
       </>
     );
@@ -122,7 +124,7 @@ export default function Workout() {
 
   return (
     <View style={[styles.screen, pad]}>
-      {topBar}
+      {!(link && landscape) && topBar}
       <View style={styles.body}>{body}</View>
 
       {view.finished && (
@@ -194,8 +196,15 @@ const styles = StyleSheet.create({
   topBar: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 6 },
   title: { flex: 1, color: colors.text, fontWeight: '600', textAlign: 'center' },
   pill: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 22, backgroundColor: colors.surface2 },
+  pillSmall: { paddingHorizontal: 11, paddingVertical: 8 },
   pillText: { color: colors.text, fontWeight: '600', fontSize: 14 },
   body: { flex: 1, justifyContent: 'space-between', paddingTop: 6 },
+  landFull: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  videoCol: { justifyContent: 'center' },
+  rightCol: { flex: 1, gap: 8, paddingRight: 16, justifyContent: 'center' },
+  actionsRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  cardWrap: { flex: 1, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10 },
+  totalsWrap: { paddingHorizontal: 16, paddingBottom: 10 },
   landRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
   side: { alignItems: 'center', justifyContent: 'center', gap: 6 },
   sideLabel: { color: colors.text, fontWeight: '700', fontSize: 14, maxWidth: '100%' },

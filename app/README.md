@@ -24,7 +24,8 @@ sounds and some native modules need a development build: `npx eas-cli build -p i
   local notifications with their sounds (`cuePlan.ts`, `notifications.ts`); they play with the screen locked.
   The plan is made again after pause, resume and skip.
 - **YouTube:** `react-native-youtube-iframe`; a pasted link is checked first (exists, may be embedded).
-  Portrait: video on top, ring and totals below. Landscape: ring, video, totals and buttons side by side.
+  With a video the page is used edge to edge: video on top (portrait) or on the left (landscape), and a rounded-square
+  card with a soft gradient and a progress frame (`src/ui/SquareCard.tsx`) fills the rest, with totals and buttons.
 - `tools/make-sounds.mjs` writes the cue sounds (same notes as the web app).
 
 ## Ported so far

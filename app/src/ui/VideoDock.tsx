@@ -20,9 +20,10 @@ async function checkEmbeddable(link: YouTubeLink): Promise<string | null> {
 interface Props {
   link: YouTubeLink;
   width: number; // the player is 16:9 at this width
+  flat?: boolean; // edge to edge: no rounded corners
 }
 
-export function VideoDock({ link, width }: Props) {
+export function VideoDock({ link, width, flat }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [playing, setPlaying] = useState(true);
 
@@ -45,7 +46,7 @@ export function VideoDock({ link, width }: Props) {
     );
   }
   return (
-    <View style={[styles.player, { width, height: (width * 9) / 16 }]}>
+    <View style={[styles.player, flat && { borderRadius: 0 }, { width, height: (width * 9) / 16 }]}>
       <YoutubePlayer
         height={(width * 9) / 16}
         width={width}
