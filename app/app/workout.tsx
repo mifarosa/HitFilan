@@ -5,10 +5,11 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useWorkout, type WorkoutView } from '@/engine/useWorkout';
-import { LEVELS, formatTime, loadSettings, parseYouTube, type YouTubeLink } from '@/shared';
+import { LEVELS, formatTime, loadSettings, parseYouTube, saveSettings, type YouTubeLink } from '@/shared';
 import { colors, levelColor } from '@/theme';
 import { Controls } from '@/ui/Controls';
 import { Ring } from '@/ui/Ring';
+import { nextSideMode, parseSideMode, sideLayout, type SideMode } from '@/ui/sideLayout';
 import { SquareCard } from '@/ui/SquareCard';
 import { Totals } from '@/ui/Totals';
 import { VideoDock } from '@/ui/VideoDock';
@@ -27,6 +28,13 @@ export default function Workout() {
   const [link, setLink] = useState<YouTubeLink | null>(null);
   const [pasteOpen, setPasteOpen] = useState(false);
   const [clock, setClock] = useState(clockNow());
+  // Sideways card size, remembered between workouts.
+  const [sideMode, setSideMode] = useState<SideMode>(() => parseSideMode(loadSettings().sideMode));
+  const cycleSideMode = () => {
+    const next = nextSideMode(sideMode);
+    setSideMode(next);
+    saveSettings({ ...loadSettings(), sideMode: next });
+  };
 
   useEffect(() => {
     const t = setInterval(() => setClock(clockNow()), 5000);
@@ -71,16 +79,19 @@ export default function Workout() {
 
   let body: React.ReactNode;
   if (link && landscape) {
-    // Video on the left, edge to edge and as tall as the screen allows (16:9); the card fills the right side.
+    // Video on the left, edge to edge and as tall as the screen allows (16:9); the card on the right.
+    // Tapping the card cycles its size (full, half, quarter): a smaller card leaves more room to the video.
     const availH = height - insets.top - insets.bottom - 12;
     const availW = width - insets.left - insets.right;
-    const videoW = Math.max(180, Math.min(availH * (16 / 9), availW - 240));
+    const { videoW, cardW } = sideLayout(sideMode, availW, availH);
     body = (
       <View style={styles.landFull}>
         <View style={[styles.videoCol, { width: videoW }]}><VideoDock link={link} width={videoW} flat /></View>
-        {/* Sideways with a video: only what to do now. Buttons are in the portrait view; a rep step is ended by tapping the card. */}
-        <Pressable style={styles.rightCol} disabled={!view.step.open} onPress={w.next} accessibilityLabel="Bitti, sonraki adım">
-          <SquareCard view={view} hint={view.step.open ? 'Bitince dokun' : undefined} />
+        <Pressable
+          style={[styles.rightCol, { width: cardW }]} onPress={cycleSideMode}
+          accessibilityLabel="Kartı küçült ya da büyüt"
+        >
+          <SquareCard view={view} mode={sideMode} onDone={w.next} />
         </Pressable>
       </View>
     );
@@ -194,9 +205,9 @@ const styles = StyleSheet.create({
   pill: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 22, backgroundColor: colors.surface2 },
   pillText: { color: colors.text, fontWeight: '600', fontSize: 14 },
   body: { flex: 1, justifyContent: 'space-between', paddingTop: 6 },
-  landFull: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  landFull: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
   videoCol: { justifyContent: 'center' },
-  rightCol: { flex: 1, paddingRight: 16, paddingVertical: 4 },
+  rightCol: { paddingVertical: 4, marginRight: 16, alignSelf: 'stretch' },
   cardWrap: { flex: 1, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10 },
   totalsWrap: { paddingHorizontal: 16, paddingBottom: 10 },
   landRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },

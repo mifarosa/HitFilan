@@ -26,6 +26,8 @@ sounds and some native modules need a development build: `npx eas-cli build -p i
 - **YouTube:** `react-native-youtube-iframe`; a pasted link is checked first (exists, may be embedded).
   With a video the page is used edge to edge: video on top (portrait) or on the left (landscape), and a rounded-square
   card with a soft gradient and a progress frame (`src/ui/SquareCard.tsx`) fills the rest, with totals and buttons.
+  Sideways, only the card is shown; tapping it cycles its size (full, half, quarter, `src/ui/sideLayout.ts`), and the video
+  takes the room the card gives up. A rep step shows a check button on the card.
 - `tools/make-sounds.mjs` writes the cue sounds (same notes as the web app).
 
 ## Ported so far
