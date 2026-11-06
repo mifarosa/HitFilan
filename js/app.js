@@ -1,6 +1,6 @@
 import { EXERCISES, LEVELS, PROGRAMS, BIKE_MINUTES, getProgram } from './data.js';
 import {
-  buildSteps, totalSeconds, estimateKcal, formatTime, programInfo,
+  buildSteps, totalSeconds, estimateKcal, formatTime, programInfo, historyEntry,
 } from './steps.js';
 import { SequenceTimer } from './timer.js';
 import { visualHTML } from './visual.js';
@@ -1051,25 +1051,13 @@ function persistActive() {
   });
 }
 
-function historyEntry(programId, name, startedAt, steps, elapsed, completed) {
-  return {
-    id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
-    programId,
-    name,
-    date: startedAt,
-    durationSec: Math.round(elapsed),
-    kcal: estimateKcal(steps, settings.weightKg, elapsed),
-    completed,
-  };
-}
-
 function saveRun(completed) {
   if (run.saved) return;
   // Actual time: rep-based sets take as long as they take.
   const elapsed = timer.totalElapsed();
   if (elapsed < 60) return; // ignore accidental starts
   run.saved = true;
-  const entry = historyEntry(run.programId, run.name, run.startedAt, run.steps, elapsed, completed);
+  const entry = historyEntry(run.programId, run.name, run.startedAt, run.steps, elapsed, completed, settings.weightKg);
   run.historyId = entry.id;
   run.entry = entry;
   addHistory(entry);
@@ -1356,7 +1344,7 @@ function renderResume() {
   $('#resume-drop').addEventListener('click', () => {
     if (active.done >= 60) {
       const steps = buildSteps(active.programId, active.opts);
-      addHistory(historyEntry(active.programId, active.name, active.startedAt, steps, active.done, false));
+      addHistory(historyEntry(active.programId, active.name, active.startedAt, steps, active.done, false, settings.weightKg));
     }
     clearActive();
     renderResume();

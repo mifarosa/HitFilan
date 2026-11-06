@@ -48,9 +48,12 @@ export const COLLECTIONS = {
   meal: { key: MEALS_KEY, prefix: 'm_' },
 };
 
+// The web app uses localStorage; the Expo app plugs in its own synchronous storage before anything is read.
+const storage = () => globalThis.__hitfilanStorage ?? globalThis.localStorage;
+
 function read(key, fallback) {
   try {
-    const raw = localStorage.getItem(key);
+    const raw = storage().getItem(key);
     return raw ? JSON.parse(raw) : fallback;
   } catch {
     return fallback;
@@ -59,7 +62,7 @@ function read(key, fallback) {
 
 function write(key, value) {
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    storage().setItem(key, JSON.stringify(value));
   } catch { /* storage unavailable */ }
 }
 
@@ -175,7 +178,7 @@ export function loadActive() {
 
 export function clearActive() {
   try {
-    localStorage.removeItem(ACTIVE_KEY);
+    storage().removeItem(ACTIVE_KEY);
   } catch { /* storage unavailable */ }
 }
 
