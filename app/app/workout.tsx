@@ -11,6 +11,7 @@ import { Controls } from '@/ui/Controls';
 import { Ring } from '@/ui/Ring';
 import { nextSideMode, parseSideMode, sideLayout, type SideMode } from '@/ui/sideLayout';
 import { SquareCard } from '@/ui/SquareCard';
+import { Subtitle } from '@/ui/Subtitle';
 import { Totals } from '@/ui/Totals';
 import { VideoDock } from '@/ui/VideoDock';
 
@@ -30,11 +31,11 @@ export default function Workout() {
   const [clock, setClock] = useState(clockNow());
   // Sideways card size, remembered between workouts.
   const [sideMode, setSideMode] = useState<SideMode>(() => parseSideMode(loadSettings().sideMode));
-  const cycleSideMode = () => {
-    const next = nextSideMode(sideMode);
+  const pickSideMode = (next: SideMode) => {
     setSideMode(next);
     saveSettings({ ...loadSettings(), sideMode: next });
   };
+  const cycleSideMode = () => pickSideMode(nextSideMode(sideMode));
 
   useEffect(() => {
     const t = setInterval(() => setClock(clockNow()), 5000);
@@ -79,20 +80,36 @@ export default function Workout() {
 
   let body: React.ReactNode;
   if (link && landscape) {
-    // Video on the left, edge to edge and as tall as the screen allows (16:9); the card on the right.
-    // Tapping the card cycles its size (full, half, quarter): a smaller card leaves more room to the video.
+    // Video on the left, edge to edge and as tall as the screen allows (16:9). Four sizes (the 1 2 3 4 buttons, or a
+    // tap on the card): card beside it full / half / quarter, or no card and the info on the video like a subtitle.
     const availH = height - insets.top - insets.bottom - 12;
     const availW = width - insets.left - insets.right;
     const { videoW, cardW } = sideLayout(sideMode, availW, availH);
+    const videoH = (videoW * 9) / 16;
+    const video = <VideoDock link={link} width={videoW} flat fixedRender={720} />;
     body = (
       <View style={styles.landFull}>
-        <View style={[styles.videoCol, { width: videoW }]}><VideoDock link={link} width={videoW} flat /></View>
-        <Pressable
-          style={[styles.rightCol, { width: cardW }]} onPress={cycleSideMode}
-          accessibilityLabel="Kartı küçült ya da büyüt"
-        >
-          <SquareCard view={view} mode={sideMode} onDone={w.next} />
-        </Pressable>
+        {sideMode === 'overlay' ? (
+          <View style={{ width: videoW, height: videoH }}>
+            {video}
+            <Subtitle view={view} onPickMode={pickSideMode} onCycle={cycleSideMode} onDone={w.next} />
+          </View>
+        ) : (
+          <>
+            <View style={[styles.videoCol, { width: videoW }]}>{video}</View>
+            <Pressable
+              style={[styles.rightCol, { width: cardW }]} onPress={cycleSideMode}
+              accessibilityLabel="Kartı küçült ya da büyüt"
+            >
+              <SquareCard view={view} mode={sideMode} onPickMode={pickSideMode} onDone={w.next} />
+            </Pressable>
+          </>
+        )}
+        {__DEV__ ? (
+          <Text style={styles.diag} pointerEvents="none">
+            {`video ${Math.round(videoW)}×${Math.round(videoH)} · kart ${Math.round(cardW)} · ${Math.round(width)}×${Math.round(height)}`}
+          </Text>
+        ) : null}
       </View>
     );
   } else if (link) {
@@ -206,6 +223,7 @@ const styles = StyleSheet.create({
   pillText: { color: colors.text, fontWeight: '600', fontSize: 14 },
   body: { flex: 1, justifyContent: 'space-between', paddingTop: 6 },
   landFull: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
+  diag: { position: 'absolute', left: 8, bottom: 0, color: 'rgba(255,255,255,0.7)', fontSize: 10, backgroundColor: 'rgba(0,0,0,0.4)', paddingHorizontal: 6 },
   videoCol: { justifyContent: 'center' },
   rightCol: { paddingVertical: 4, marginRight: 16, alignSelf: 'stretch' },
   cardWrap: { flex: 1, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10 },

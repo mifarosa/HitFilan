@@ -21,9 +21,12 @@ interface Props {
   link: YouTubeLink;
   width: number; // the player is 16:9 at this width
   flat?: boolean; // edge to edge: no rounded corners
+  // Draw the player at this fixed width and scale it down to `width`. The page inside the WebView is then
+  // never laid out again, so the video follows size changes at once instead of keeping its first size.
+  fixedRender?: number;
 }
 
-export function VideoDock({ link, width, flat }: Props) {
+export function VideoDock({ link, width, flat, fixedRender }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [playing, setPlaying] = useState(true);
 
@@ -45,18 +48,27 @@ export function VideoDock({ link, width, flat }: Props) {
       </View>
     );
   }
+  const renderW = fixedRender ?? width;
+  const renderH = (renderW * 9) / 16;
+  const player = (
+    <YoutubePlayer
+      height={renderH}
+      width={renderW}
+      videoId={link.id}
+      play={playing}
+      onChangeState={(state: string) => { if (state === 'ended') setPlaying(false); }}
+      onError={(code: string) => setError(playerErrorText(code === 'video_not_found' ? 100 : code === 'embed_not_allowed' ? 150 : 0))}
+      webViewProps={{ allowsInlineMediaPlayback: true, mediaPlaybackRequiresUserAction: false }}
+      initialPlayerParams={{ rel: false, modestbranding: true }}
+    />
+  );
   return (
     <View style={[styles.player, flat && { borderRadius: 0 }, { width, height: (width * 9) / 16 }]}>
-      <YoutubePlayer
-        height={(width * 9) / 16}
-        width={width}
-        videoId={link.id}
-        play={playing}
-        onChangeState={(state: string) => { if (state === 'ended') setPlaying(false); }}
-        onError={(code: string) => setError(playerErrorText(code === 'video_not_found' ? 100 : code === 'embed_not_allowed' ? 150 : 0))}
-        webViewProps={{ allowsInlineMediaPlayback: true, mediaPlaybackRequiresUserAction: false }}
-        initialPlayerParams={{ rel: false, modestbranding: true }}
-      />
+      {fixedRender ? (
+        <View style={{ width: renderW, height: renderH, transformOrigin: 'top left', transform: [{ scale: width / renderW }] }}>
+          {player}
+        </View>
+      ) : player}
     </View>
   );
 }

@@ -8,11 +8,13 @@ import type { WorkoutView } from '@/engine/useWorkout';
 import { LEVELS, formatTime, loadSettings } from '@/shared';
 import { colors, levelColor } from '@/theme';
 import { roundedFrame } from './squarePath';
+import { SizePicker } from './SizePicker';
 import type { SideMode } from './sideLayout';
 
 interface Props {
   view: WorkoutView;
-  mode?: SideMode;
+  mode?: Exclude<SideMode, 'overlay'>;
+  onPickMode?: (mode: SideMode) => void;
   /** A rep step ends when the user says so: shows a check button that calls this. */
   onDone?: () => void;
 }
@@ -23,7 +25,7 @@ const SIZES = {
   quarter: { radius: 18, stroke: 5 },
 };
 
-export function SquareCard({ view, mode = 'full', onDone }: Props) {
+export function SquareCard({ view, mode = 'full', onPickMode, onDone }: Props) {
   const [box, setBox] = useState({ w: 0, h: 0 });
   const onLayout = (e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
@@ -62,7 +64,7 @@ export function SquareCard({ view, mode = 'full', onDone }: Props) {
           />
         </Svg>
       )}
-      <View style={[styles.inner, mode !== 'full' && { paddingHorizontal: 8, paddingVertical: 8 }]}>
+      <View style={[styles.inner, mode !== 'full' && { paddingHorizontal: 8, paddingTop: 8 }, { paddingBottom: mode === 'quarter' ? 34 : 40 }]}>
         {mode !== 'quarter' && <Text style={[styles.tag, { color }, mode === 'half' && { fontSize: 10 }]} numberOfLines={1}>{step.tag.toUpperCase()}</Text>}
         <Text style={[styles.time, { fontSize: timeSize, color: view.warn ? colors.warn : colors.text }]} adjustsFontSizeToFit numberOfLines={1}>
           {time}
@@ -89,11 +91,11 @@ export function SquareCard({ view, mode = 'full', onDone }: Props) {
           </Pressable>
         ) : null}
       </View>
-      <View style={styles.dots} pointerEvents="none">
-        {(['full', 'half', 'quarter'] as const).map((m) => (
-          <View key={m} style={[styles.dot, { backgroundColor: m === mode ? color : colors.line }]} />
-        ))}
-      </View>
+      {onPickMode ? (
+        <View style={styles.picker} pointerEvents="box-none">
+          <SizePicker mode={mode} color={color} onPick={onPickMode} size={mode === 'quarter' ? 19 : 26} />
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -108,6 +110,5 @@ const styles = StyleSheet.create({
   next: { color: colors.muted, fontSize: 13, marginTop: 2 },
   done: { marginTop: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.easy },
   doneText: { color: '#08130e', fontSize: 22, fontWeight: '900' },
-  dots: { position: 'absolute', top: 10, right: 14, flexDirection: 'row', gap: 4 },
-  dot: { width: 5, height: 5, borderRadius: 3 },
+  picker: { position: 'absolute', left: 0, right: 0, bottom: 9, alignItems: 'center' },
 });
