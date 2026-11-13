@@ -52,7 +52,9 @@ const RPE_LABELS = { 1: 'Çok kolay', 2: 'Rahat', 3: 'Zorladı', 4: 'Çok zor' }
 
 function showView(name) {
   $$('.view').forEach((v) => v.classList.toggle('active', v.id === `view-${name}`));
-  $$('.tab').forEach((t) => t.classList.toggle('active', t.dataset.view === name));
+  // Goals live under the "İlerleme" tab, next to the calendar.
+  const tab = name === 'goals' ? 'history' : name;
+  $$('.tab').forEach((t) => t.classList.toggle('active', t.dataset.view === tab));
   if (name === 'history') renderHistory();
   if (name === 'goals') renderGoals();
   if (name === 'nutrition') renderNutrition();
@@ -68,6 +70,7 @@ function showView(name) {
 }
 
 $$('.tab').forEach((t) => t.addEventListener('click', () => showView(t.dataset.view)));
+$$('[data-switch]').forEach((b) => b.addEventListener('click', () => showView(b.dataset.switch)));
 
 function renderHomeGoals() {
   const el = $('#home-goals');
@@ -337,7 +340,7 @@ function renderWeek(el) {
   const active = new Set(entries.map((e) => (new Date(e.date).getDay() + 6) % 7));
   el.innerHTML = `
     <div class="week-stats">
-      <div><b>${entries.length}/${settings.weeklyGoal}</b><small>haftalık hedef</small></div>
+      <div><b>${entries.length}/${settings.weeklyGoal}</b><small>bu hafta</small></div>
       <div><b>${mins}</b><small>dakika</small></div>
       <div><b>${kcal}</b><small>~kcal</small></div>
     </div>
@@ -802,11 +805,15 @@ $('#list-clear').addEventListener('click', () => {
 
 const form = $('#settings-form');
 
+// 0 means "not set" for these: shown as an empty field with a hint instead of a lonely 0.
+const UNSET_ZERO = ['heightCm', 'age', 'dailyKcal'];
+
 function fillSettings() {
   for (const [k, v] of Object.entries(settings)) {
     const input = form.elements[k];
     if (!input) continue;
     if (input.type === 'checkbox') input.checked = v;
+    else if (UNSET_ZERO.includes(k) && !v) { input.value = ''; input.placeholder = '—'; }
     else input.value = v;
   }
 }
@@ -817,6 +824,7 @@ form.addEventListener('change', () => {
     const input = form.elements[k];
     if (!input) continue;
     if (input.type === 'checkbox') next[k] = input.checked;
+    else if (UNSET_ZERO.includes(k) && input.value === '') next[k] = 0;
     else if (input.value !== '' && !Number.isNaN(+input.value)) next[k] = +input.value;
   }
   settings = next;
