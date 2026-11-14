@@ -34,6 +34,11 @@ sounds and some native modules need a development build: `npx eas-cli build -p i
   In development builds a small line shows the mode, video, card and screen sizes.
 - `tools/make-sounds.mjs` writes the cue sounds (same notes as the web app).
 
+## Look
+
+One small type scale (13 / 16 / 20 / 28, `type` in `src/theme.ts`) and two weights (400, 700), like the web app. Settings are three
+folding groups (body, training, sound). The tiny sizes inside the sideways card sizes are the exception: they follow the card.
+
 ## Ported so far
 
 Programs and the workout screen (A1). Coming in order: history, goals and plans; free counter and moves;

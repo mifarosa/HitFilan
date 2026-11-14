@@ -177,7 +177,7 @@ function StepInfo({ view, color, compact }: { view: WorkoutView; color: string; 
   return (
     <View style={{ gap: 4, alignItems: compact ? 'flex-start' : 'center' }}>
       <Text style={[styles.tag, { color }]}>{step.tag.toUpperCase()}</Text>
-      <Text style={[styles.stepName, compact && { fontSize: 24 }]}>{step.label}</Text>
+      <Text style={[styles.stepName, compact && { fontSize: 28 }]}>{step.label}</Text>
       {res != null && rpm ? <Text style={styles.target}>Direnç {res} · {rpm} rpm</Text> : null}
       {!compact && step.hint ? <Text style={styles.hint}>{step.hint}</Text> : null}
       {view.next ? (
@@ -218,35 +218,35 @@ function PasteDialog({ visible, onClose, onSubmit }: { visible: boolean; onClose
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   topBar: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 6 },
-  title: { flex: 1, color: colors.text, fontWeight: '600', textAlign: 'center' },
+  title: { flex: 1, color: colors.text, fontWeight: '700', textAlign: 'center' },
   pill: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 22, backgroundColor: colors.surface2 },
-  pillText: { color: colors.text, fontWeight: '600', fontSize: 14 },
+  pillText: { color: colors.text, fontWeight: '700', fontSize: 13 },
   body: { flex: 1, justifyContent: 'space-between', paddingTop: 6 },
   landFull: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
-  diag: { position: 'absolute', left: 8, bottom: 0, color: '#fff', fontSize: 12, backgroundColor: 'rgba(0,0,0,0.4)', paddingHorizontal: 6 },
+  diag: { position: 'absolute', left: 8, bottom: 0, color: '#fff', fontSize: 13, backgroundColor: 'rgba(0,0,0,0.4)', paddingHorizontal: 6 },
   videoCol: { justifyContent: 'center' },
   rightCol: { paddingVertical: 4, marginRight: 16, alignSelf: 'stretch' },
   cardWrap: { flex: 1, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10 },
   totalsWrap: { paddingHorizontal: 16, paddingBottom: 10 },
   landRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
   side: { alignItems: 'center', justifyContent: 'center', gap: 6 },
-  sideLabel: { color: colors.text, fontWeight: '700', fontSize: 14, maxWidth: '100%' },
+  sideLabel: { color: colors.text, fontWeight: '700', fontSize: 13, maxWidth: '100%' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   rowFill: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
   half: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
   centerCol: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14 },
   tag: { fontSize: 13, fontWeight: '700', letterSpacing: 1 },
-  stepName: { color: colors.text, fontSize: 30, fontWeight: '800', textAlign: 'center' },
-  target: { color: colors.text, fontSize: 15, fontWeight: '600' },
-  hint: { color: colors.muted, fontSize: 14, textAlign: 'center' },
+  stepName: { color: colors.text, fontSize: 28, fontWeight: '700', textAlign: 'center' },
+  target: { color: colors.text, fontSize: 16, fontWeight: '700' },
+  hint: { color: colors.muted, fontSize: 13, textAlign: 'center' },
   next: { color: colors.muted, fontSize: 13, marginTop: 4 },
   finish: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(16,20,24,0.96)', alignItems: 'center', justifyContent: 'center', padding: 24 },
-  finishTitle: { color: colors.easy, fontSize: 32, fontWeight: '800' },
-  finishText: { color: colors.text, fontSize: 18, marginTop: 8 },
+  finishTitle: { color: colors.easy, fontSize: 28, fontWeight: '700' },
+  finishText: { color: colors.text, fontSize: 20, marginTop: 8 },
   finishMeta: { color: colors.muted, fontSize: 16, marginTop: 2 },
   modalBack: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center', padding: 24 },
   modal: { width: '100%', maxWidth: 420, gap: 10, padding: 18, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line },
-  modalTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
+  modalTitle: { color: colors.text, fontSize: 20, fontWeight: '700' },
   modalInput: { color: colors.text, padding: 12, borderRadius: 12, backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.line },
   modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 4 },
 });

@@ -32,5 +32,5 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 5, alignItems: 'center', justifyContent: 'center' },
   btn: { alignItems: 'center', justifyContent: 'center' },
   off: { backgroundColor: 'rgba(33,43,53,0.85)', borderWidth: 1, borderColor: colors.line },
-  num: { fontWeight: '800' },
+  num: { fontWeight: '700' },
 });

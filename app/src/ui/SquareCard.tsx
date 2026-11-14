@@ -103,12 +103,12 @@ export function SquareCard({ view, mode = 'full', onPickMode, onDone }: Props) {
 const styles = StyleSheet.create({
   card: { flex: 1, minHeight: 100 },
   inner: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18, paddingVertical: 12, gap: 2 },
-  tag: { fontSize: 13, fontWeight: '800', letterSpacing: 1.2 },
-  time: { fontWeight: '800', fontVariant: ['tabular-nums'], includeFontPadding: false },
-  name: { color: colors.text, fontWeight: '800', textAlign: 'center' },
-  target: { color: colors.text, fontSize: 14, fontWeight: '600', marginTop: 4 },
+  tag: { fontSize: 13, fontWeight: '700', letterSpacing: 1.2 },
+  time: { fontWeight: '700', fontVariant: ['tabular-nums'], includeFontPadding: false },
+  name: { color: colors.text, fontWeight: '700', textAlign: 'center' },
+  target: { color: colors.text, fontSize: 14, fontWeight: '700', marginTop: 4 },
   next: { color: colors.muted, fontSize: 13, marginTop: 2 },
   done: { marginTop: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.easy },
-  doneText: { color: '#08130e', fontSize: 22, fontWeight: '900' },
+  doneText: { color: '#08130e', fontSize: 22, fontWeight: '700' },
   picker: { position: 'absolute', left: 0, right: 0, bottom: 9, alignItems: 'center' },
 });

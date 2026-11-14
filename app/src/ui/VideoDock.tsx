@@ -82,6 +82,6 @@ export function VideoDock({ link, width, flat }: Props) {
 const styles = StyleSheet.create({
   player: { borderRadius: 14, overflow: 'hidden', backgroundColor: '#000' },
   error: { padding: 14, borderRadius: 14, gap: 8, backgroundColor: 'rgba(239,77,77,0.18)' },
-  errorText: { color: colors.text, fontSize: 14 },
-  open: { color: colors.accent, fontWeight: '700', fontSize: 15 },
+  errorText: { color: colors.text, fontSize: 13 },
+  open: { color: colors.accent, fontWeight: '700', fontSize: 16 },
 });

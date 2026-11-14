@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { loadSettings, saveSettings, type Settings } from '@/shared';
 import { colors } from '@/theme';
@@ -43,21 +43,37 @@ export default function SettingsScreen() {
     </View>
   );
 
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const toggle = (key: string) => setOpen((o) => ({ ...o, [key]: !o[key] }));
+  const group = (key: string, title: string, children: React.ReactNode) => (
+    <View style={styles.card}>
+      <Pressable style={styles.groupHead} onPress={() => toggle(key)} accessibilityRole="button" accessibilityState={{ expanded: !!open[key] }}>
+        <Text style={styles.groupTitle}>{title}</Text>
+        <Text style={styles.chevron}>{open[key] ? '⌃' : '⌄'}</Text>
+      </Pressable>
+      {open[key] ? <View style={styles.groupBody}>{children}</View> : null}
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Ayarlar</Text>
-        <View style={styles.card}>
-          {field('weightKg', 'Kilo (kg)', 'Kalori tahmini için')}
-          {field('resEasy', 'Direnç: boşta', 'Bisikletindeki kademe numarası')}
-          {field('resModerate', 'Direnç: orta')}
-          {field('resHard', 'Direnç: ağır')}
-        </View>
-        <View style={styles.card}>
-          {flag('beeps', 'Bip sesleri', 'Geri sayım, geçiş ve taraf değiştir sinyalleri')}
-          {flag('voice', 'Sesli anons', 'Türkçe anons; bazı telefonlarda müziği anlık kısar')}
-          {flag('vibrate', 'Titreşim')}
-        </View>
+        {group('body', 'Vücut ve kalori', field('weightKg', 'Kilo (kg)', 'Kalori tahmini için'))}
+        {group('train', 'Antrenman', (
+          <>
+            {field('resEasy', 'Direnç: boşta', 'Bisikletindeki kademe numarası')}
+            {field('resModerate', 'Direnç: orta')}
+            {field('resHard', 'Direnç: ağır')}
+          </>
+        ))}
+        {group('sound', 'Ses ve titreşim', (
+          <>
+            {flag('beeps', 'Bip sesleri', 'Geri sayım, geçiş ve taraf değiştir sinyalleri')}
+            {flag('voice', 'Sesli anons', 'Türkçe anons; bazı telefonlarda müziği anlık kısar')}
+            {flag('vibrate', 'Titreşim')}
+          </>
+        ))}
       </ScrollView>
     </SafeAreaView>
   );
@@ -66,10 +82,14 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { padding: 16, gap: 12 },
-  title: { color: colors.text, fontSize: 24, fontWeight: '800' },
+  title: { color: colors.text, fontSize: 28, fontWeight: '700' },
   card: { borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 16 },
+  groupHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 16 },
+  groupTitle: { color: colors.text, fontSize: 16, fontWeight: '700' },
+  chevron: { color: colors.muted, fontSize: 20 },
+  groupBody: { borderTopWidth: 1, borderTopColor: colors.line },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
   label: { color: colors.text, fontSize: 16 },
-  hint: { color: colors.muted, fontSize: 12, marginTop: 2 },
-  input: { width: 84, textAlign: 'right', color: colors.text, fontSize: 17, paddingVertical: 8, paddingHorizontal: 10, borderRadius: 10, backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.line },
+  hint: { color: colors.muted, fontSize: 13, marginTop: 2 },
+  input: { width: 84, textAlign: 'right', color: colors.text, fontSize: 16, paddingVertical: 8, paddingHorizontal: 10, borderRadius: 10, backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.line },
 });

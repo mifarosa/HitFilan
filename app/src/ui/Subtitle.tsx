@@ -51,11 +51,11 @@ const SHADOW = { textShadowColor: 'rgba(0,0,0,0.9)', textShadowOffset: { width: 
 const styles = StyleSheet.create({
   wrap: { position: 'absolute', left: 0, right: 0, bottom: '9%', alignItems: 'center', gap: 6 },
   box: { maxWidth: '92%', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.42)', alignItems: 'center', gap: 2 },
-  line1: { color: '#fff', fontSize: 22, fontWeight: '800', fontVariant: ['tabular-nums'], ...SHADOW },
+  line1: { color: '#fff', fontSize: 22, fontWeight: '700', fontVariant: ['tabular-nums'], ...SHADOW },
   res: { color: '#fff', fontSize: 15, fontWeight: '700' },
   line2: { color: 'rgba(255,255,255,0.85)', fontSize: 13, ...SHADOW },
   track: { alignSelf: 'stretch', height: 3, borderRadius: 2, marginTop: 3, backgroundColor: 'rgba(255,255,255,0.25)', overflow: 'hidden' },
   fill: { height: 3 },
   done: { marginTop: 4, paddingHorizontal: 14, paddingVertical: 5, borderRadius: 14, backgroundColor: colors.easy },
-  doneText: { color: '#08130e', fontWeight: '900', fontSize: 14 },
+  doneText: { color: '#08130e', fontWeight: '700', fontSize: 14 },
 });

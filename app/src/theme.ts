@@ -29,3 +29,7 @@ export function levelColor(level: string): string {
       return colors.muted;
   }
 }
+
+// One small type scale, like the web app: 13 (notes), 16 (body), 20 (titles), 28 (big numbers); two weights.
+export const type = { s: 13, m: 16, l: 20, xl: 28 } as const;
+export const weight = { regular: '400', bold: '700' } as const;
