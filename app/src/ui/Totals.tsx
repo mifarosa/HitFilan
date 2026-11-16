@@ -37,8 +37,8 @@ const styles = StyleSheet.create({
   flat: { flexDirection: 'row', justifyContent: 'space-between' },
   cell: { alignItems: 'center' },
   label: { color: colors.muted, fontSize: 13 },
-  valueFlat: { color: colors.text, fontSize: 18, fontWeight: '800', fontVariant: ['tabular-nums'] },
+  valueFlat: { color: colors.text, fontSize: 20, fontWeight: '700', fontVariant: ['tabular-nums'] },
   box: { gap: 6, padding: 12, borderRadius: 16, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line },
   line: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 },
-  value: { color: colors.text, fontSize: 16, fontWeight: '800', fontVariant: ['tabular-nums'] },
+  value: { color: colors.text, fontSize: 16, fontWeight: '700', fontVariant: ['tabular-nums'] },
 });

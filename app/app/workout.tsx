@@ -5,10 +5,13 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useWorkout, type WorkoutView } from '@/engine/useWorkout';
-import { LEVELS, formatTime, loadSettings, parseYouTube, type YouTubeLink } from '@/shared';
+import { LEVELS, formatTime, loadSettings, parseYouTube, saveSettings, type YouTubeLink } from '@/shared';
 import { colors, levelColor } from '@/theme';
 import { Controls } from '@/ui/Controls';
 import { Ring } from '@/ui/Ring';
+import { nextSideMode, parseSideMode, sideLayout, type SideMode } from '@/ui/sideLayout';
+import { SquareCard } from '@/ui/SquareCard';
+import { Subtitle } from '@/ui/Subtitle';
 import { Totals } from '@/ui/Totals';
 import { VideoDock } from '@/ui/VideoDock';
 
@@ -26,6 +29,13 @@ export default function Workout() {
   const [link, setLink] = useState<YouTubeLink | null>(null);
   const [pasteOpen, setPasteOpen] = useState(false);
   const [clock, setClock] = useState(clockNow());
+  // Sideways card size, remembered between workouts.
+  const [sideMode, setSideMode] = useState<SideMode>(() => parseSideMode(loadSettings().sideMode));
+  const pickSideMode = (next: SideMode) => {
+    setSideMode(next);
+    saveSettings({ ...loadSettings(), sideMode: next });
+  };
+  const cycleSideMode = () => pickSideMode(nextSideMode(sideMode));
 
   useEffect(() => {
     const t = setInterval(() => setClock(clockNow()), 5000);
@@ -43,11 +53,17 @@ export default function Workout() {
     ]);
 
   const landscape = width > height;
-  const pad = { paddingTop: insets.top + 6, paddingBottom: insets.bottom + 8, paddingLeft: insets.left + 16, paddingRight: insets.right + 16 };
+  const fullBleed = !!link; // with a video the page is used edge to edge; the pieces add their own margins
+  const pad = {
+    paddingTop: insets.top + 6,
+    paddingBottom: insets.bottom + 8,
+    paddingLeft: fullBleed ? (landscape ? insets.left : 0) : insets.left + 16,
+    paddingRight: fullBleed ? (landscape ? insets.right : 0) : insets.right + 16,
+  };
   const color = levelColor(view.step.level);
 
   const topBar = (
-    <View style={styles.topBar}>
+    <View style={[styles.topBar, fullBleed && { paddingHorizontal: 16 }]}>
       <Pressable style={styles.pill} onPress={confirmEnd}><Text style={styles.pillText}>✕ Bitir</Text></Pressable>
       <Text style={styles.title} numberOfLines={1}>{view.name}</Text>
       <Pressable style={styles.pill} onPress={w.toggleMute}><Text style={styles.pillText}>{w.muted ? '🔇' : '🔊'}</Text></Pressable>
@@ -64,34 +80,44 @@ export default function Workout() {
 
   let body: React.ReactNode;
   if (link && landscape) {
-    // Ring on the left, the video in the middle (16:9, sized from the height), totals and buttons on the right.
-    const availH = height - pad.paddingTop - pad.paddingBottom - 56;
-    const sideW = 128;
-    const videoW = Math.max(160, Math.min((availH - 6) * (16 / 9), width - pad.paddingLeft - pad.paddingRight - sideW * 2 - 24));
+    // Video on the left, edge to edge and as tall as the screen allows (16:9). Four sizes (the 1 2 3 4 buttons, or a
+    // tap on the card): card beside it full / half / quarter, or no card and the info on the video like a subtitle.
+    const availH = height - insets.top - insets.bottom - 12;
+    const availW = width - insets.left - insets.right;
+    const { videoW, cardW } = sideLayout(sideMode, availW, availH);
+    const videoH = (videoW * 9) / 16;
+    const video = <VideoDock link={link} width={videoW} flat />;
     body = (
-      <View style={styles.landRow}>
-        <View style={[styles.side, { width: sideW }]}>
-          <Text style={styles.sideLabel} numberOfLines={1}>{view.step.label}</Text>
-          <Ring size={sideW - 18} progress={view.progress} color={color} time={time} warn={view.warn} />
-        </View>
-        <View style={styles.center}><VideoDock link={link} width={videoW} /></View>
-        <View style={[styles.side, { width: sideW + 12, gap: 10 }]}>
-          <Totals view={view} clock={clock} box />
-          {controls(true)}
-        </View>
+      <View style={styles.landFull}>
+        {sideMode === 'overlay' ? (
+          <View style={{ width: videoW, height: videoH }}>
+            {video}
+            <Subtitle view={view} onPickMode={pickSideMode} onCycle={cycleSideMode} onDone={w.next} />
+          </View>
+        ) : (
+          <>
+            <View style={[styles.videoCol, { width: videoW }]}>{video}</View>
+            <Pressable
+              style={[styles.rightCol, { width: cardW }]} onPress={cycleSideMode}
+              accessibilityLabel="Kartı küçült ya da büyüt"
+            >
+              <SquareCard view={view} mode={sideMode} onPickMode={pickSideMode} onDone={w.next} />
+            </Pressable>
+          </>
+        )}
+        {__DEV__ ? (
+          <Text style={styles.diag} pointerEvents="none">
+            {`mod ${sideMode} · video ${Math.round(videoW)}×${Math.round(videoH)} · kart ${Math.round(cardW)} · ekran ${Math.round(width)}×${Math.round(height)}`}
+          </Text>
+        ) : null}
       </View>
     );
   } else if (link) {
     body = (
       <>
-        <VideoDock link={link} width={width - pad.paddingLeft - pad.paddingRight} />
-        <View style={styles.rowFill}>
-          <View style={styles.half}>
-            <Ring size={Math.min(150, (width - 48) / 2)} progress={view.progress} color={color} time={time} warn={view.warn} />
-            <Text style={styles.sideLabel} numberOfLines={1}>{view.step.label}</Text>
-          </View>
-          <View style={styles.half}><Totals view={view} clock={clock} box /></View>
-        </View>
+        <VideoDock link={link} width={width} flat />
+        <View style={styles.cardWrap}><SquareCard view={view} /></View>
+        <View style={styles.totalsWrap}><Totals view={view} clock={clock} /></View>
         {controls(false)}
       </>
     );
@@ -122,7 +148,7 @@ export default function Workout() {
 
   return (
     <View style={[styles.screen, pad]}>
-      {topBar}
+      {!(link && landscape) && topBar}
       <View style={styles.body}>{body}</View>
 
       {view.finished && (
@@ -151,7 +177,7 @@ function StepInfo({ view, color, compact }: { view: WorkoutView; color: string; 
   return (
     <View style={{ gap: 4, alignItems: compact ? 'flex-start' : 'center' }}>
       <Text style={[styles.tag, { color }]}>{step.tag.toUpperCase()}</Text>
-      <Text style={[styles.stepName, compact && { fontSize: 24 }]}>{step.label}</Text>
+      <Text style={[styles.stepName, compact && { fontSize: 28 }]}>{step.label}</Text>
       {res != null && rpm ? <Text style={styles.target}>Direnç {res} · {rpm} rpm</Text> : null}
       {!compact && step.hint ? <Text style={styles.hint}>{step.hint}</Text> : null}
       {view.next ? (
@@ -192,29 +218,35 @@ function PasteDialog({ visible, onClose, onSubmit }: { visible: boolean; onClose
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   topBar: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 6 },
-  title: { flex: 1, color: colors.text, fontWeight: '600', textAlign: 'center' },
+  title: { flex: 1, color: colors.text, fontWeight: '700', textAlign: 'center' },
   pill: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 22, backgroundColor: colors.surface2 },
-  pillText: { color: colors.text, fontWeight: '600', fontSize: 14 },
+  pillText: { color: colors.text, fontWeight: '700', fontSize: 13 },
   body: { flex: 1, justifyContent: 'space-between', paddingTop: 6 },
+  landFull: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
+  diag: { position: 'absolute', left: 8, bottom: 0, color: '#fff', fontSize: 13, backgroundColor: 'rgba(0,0,0,0.4)', paddingHorizontal: 6 },
+  videoCol: { justifyContent: 'center' },
+  rightCol: { paddingVertical: 4, marginRight: 16, alignSelf: 'stretch' },
+  cardWrap: { flex: 1, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10 },
+  totalsWrap: { paddingHorizontal: 16, paddingBottom: 10 },
   landRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
   side: { alignItems: 'center', justifyContent: 'center', gap: 6 },
-  sideLabel: { color: colors.text, fontWeight: '700', fontSize: 14, maxWidth: '100%' },
+  sideLabel: { color: colors.text, fontWeight: '700', fontSize: 13, maxWidth: '100%' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   rowFill: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
   half: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
   centerCol: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14 },
   tag: { fontSize: 13, fontWeight: '700', letterSpacing: 1 },
-  stepName: { color: colors.text, fontSize: 30, fontWeight: '800', textAlign: 'center' },
-  target: { color: colors.text, fontSize: 15, fontWeight: '600' },
-  hint: { color: colors.muted, fontSize: 14, textAlign: 'center' },
+  stepName: { color: colors.text, fontSize: 28, fontWeight: '700', textAlign: 'center' },
+  target: { color: colors.text, fontSize: 16, fontWeight: '700' },
+  hint: { color: colors.muted, fontSize: 13, textAlign: 'center' },
   next: { color: colors.muted, fontSize: 13, marginTop: 4 },
   finish: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(16,20,24,0.96)', alignItems: 'center', justifyContent: 'center', padding: 24 },
-  finishTitle: { color: colors.easy, fontSize: 32, fontWeight: '800' },
-  finishText: { color: colors.text, fontSize: 18, marginTop: 8 },
+  finishTitle: { color: colors.easy, fontSize: 28, fontWeight: '700' },
+  finishText: { color: colors.text, fontSize: 20, marginTop: 8 },
   finishMeta: { color: colors.muted, fontSize: 16, marginTop: 2 },
   modalBack: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center', padding: 24 },
   modal: { width: '100%', maxWidth: 420, gap: 10, padding: 18, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line },
-  modalTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
+  modalTitle: { color: colors.text, fontSize: 20, fontWeight: '700' },
   modalInput: { color: colors.text, padding: 12, borderRadius: 12, backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.line },
   modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 4 },
 });

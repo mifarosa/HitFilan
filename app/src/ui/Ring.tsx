@@ -34,5 +34,5 @@ export function Ring({ size, progress, color, time, warn }: Props) {
 
 const styles = StyleSheet.create({
   center: { alignItems: 'center', justifyContent: 'center' },
-  time: { fontWeight: '800', fontVariant: ['tabular-nums'] },
+  time: { fontWeight: '700', fontVariant: ['tabular-nums'] },
 });
