@@ -2,10 +2,10 @@
 //  - The API key: the phone's secure storage (iOS Keychain / Android Keystore), this device only (not in iCloud
 //    backups), never in the app's normal storage, never synced, never logged.
 //  - Provider, model, consent and the "send context" choice: device storage `hitfilan.ai` (not synced to Firebase).
-//  - The coach chat: device storage `hitfilan.coach` (last 30 messages, not synced).
+//  - There is no chat history: every coach question stands alone.
 import * as SecureStore from 'expo-secure-store';
 import { sharedStorage } from '@/storage';
-import { PROVIDERS, type Msg, type Provider } from './providers';
+import { PROVIDERS, type Provider } from './providers';
 
 const keyName = (p: Provider) => `hitfilan.aikey.${p}`;
 
@@ -29,8 +29,6 @@ export interface AiPrefs {
 }
 
 const PREFS = 'hitfilan.ai';
-const CHAT = 'hitfilan.coach';
-export const MAX_CHAT = 30;
 
 export function loadAiPrefs(): AiPrefs {
   const base: AiPrefs = { provider: 'gemini', models: {}, sendContext: true, consented: [] };
@@ -51,20 +49,3 @@ export function saveAiPrefs(prefs: AiPrefs): void {
 }
 
 export const modelOf = (prefs: AiPrefs, p: Provider = prefs.provider) => prefs.models[p]?.trim() || PROVIDERS[p].defaultModel;
-
-export function loadChat(): Msg[] {
-  try {
-    const raw = JSON.parse(sharedStorage.getItem(CHAT) ?? '[]');
-    return Array.isArray(raw)
-      ? raw.filter((m) => (m?.role === 'user' || m?.role === 'assistant') && typeof m.content === 'string').slice(-MAX_CHAT)
-      : [];
-  } catch { return []; }
-}
-
-export function saveChat(msgs: Msg[]): void {
-  sharedStorage.setItem(CHAT, JSON.stringify(msgs.slice(-MAX_CHAT)));
-}
-
-export function clearChat(): void {
-  sharedStorage.removeItem(CHAT);
-}

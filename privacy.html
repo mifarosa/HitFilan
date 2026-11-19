@@ -27,8 +27,7 @@
   <h2>Cihazda tutulan veriler</h2>
   <ul>
     <li>Antrenman geçmişi, planlar, hedefler, öğünler, ayarlar (kilo, boy, yaş gibi isteğe bağlı bilgiler).</li>
-    <li>Sohbet geçmişin (koça sorduğun sorular), yalnızca cihazında.</li>
-  </ul>
+      </ul>
 
   <h2>İsteğe bağlı bulut yedeği</h2>
   <p>Google ile giriş yaparsan geçmişin, planların, hedeflerin, öğünlerin ve ayarların senin hesabına bağlı olarak
@@ -39,9 +38,10 @@
     <li>Yapay zekâ özelliklerini kullanmak için <b>kendi</b> API anahtarını (Google Gemini, OpenAI veya Anthropic) girersin.
     Anahtar yalnızca cihazının güvenli deposunda (iOS Keychain / Android Keystore) tutulur. Bizim sunucumuza ya da
     yedeğe gönderilmez.</li>
-    <li>Bir soru sorduğunda ya da öğün analizi istediğinde, yazdığın metin ve (açıksa) şu bağlam <b>doğrudan seçtiğin
-    sağlayıcıya</b> gönderilir: kilo, boy, yaş, cinsiyet, haftalık hedef ve son antrenmanlarının özeti. Bağlamı Ayarlar'dan
-    kapatabilirsin. Verinin sağlayıcıda nasıl işlendiği o sağlayıcının politikasına bağlıdır; ücret ve kota senin
+    <li>Bir soru sorduğunda ya da öğün analizi istediğinde, yazdığın metin ve (açıksa) iki sayı <b>doğrudan seçtiğin
+    sağlayıcıya</b> gönderilir: günlük kalori ihtiyacın ve bugün antrenmanla harcadığın kalori. "Günü yorumla"yı
+    kullanırsan bugünün öğünleri (ad, kalori, girildiği saat) da gönderilir. Sohbet geçmişi tutulmaz ve gönderilmez.
+    Sayıları Ayarlar'dan kapatabilirsin. Verinin sağlayıcıda nasıl işlendiği o sağlayıcının politikasına bağlıdır; ücret ve kota senin
     hesabındandır.</li>
     <li>Yapay zekâ cevapları tahmindir, tıbbi tavsiye değildir.</li>
   </ul>
@@ -63,8 +63,8 @@
   <p>HitFilan needs no account and has no ads or tracking. Your data stays on your device. An optional Google sign-in
   backs it up to your own Firebase space. The AI features are optional and use <b>your own</b> API key (Gemini, OpenAI
   or Anthropic), stored only in the device's secure storage; requests go straight from your phone to the provider you
-  chose, together with the text you type and, if enabled, a short context (weight, height, age, weekly goal, recent
-  workouts). AI answers are estimates, not medical advice.</p>
+  chose, together with the text you type and, if enabled, two numbers (daily calorie need and calories burned today);
+  "comment my day" also sends today's meals with the times you logged them. No chat history is kept or sent. AI answers are estimates, not medical advice.</p>
 </main>
 </body>
 </html>

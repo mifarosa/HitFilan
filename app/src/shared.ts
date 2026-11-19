@@ -115,7 +115,8 @@ export const loadHistory = storeJs.loadHistory as () => Record<string, unknown>[
 
 // ---- AI (prompts, context and validators: js/ai-core.js) and the calorie balance (js/nutrition-core.js) ----
 export interface MealItem { name: string; kcal: number }
-export interface Meal extends MealItem { id: string; date: string }
+export type SlotId = 'morning' | 'noon' | 'evening' | 'snack';
+export interface Meal extends MealItem { id: string; date: string; slot?: SlotId }
 export interface PlanItem {
   type: 'exercise';
   exercise: string;
@@ -135,7 +136,9 @@ export interface UserPlan {
 export const mealPrompt = aiCore.mealPrompt as (text: string) => string;
 export const cleanItems = aiCore.cleanItems as (raw: unknown) => MealItem[];
 export const COACH_SYSTEM = aiCore.COACH_SYSTEM as string;
-export const coachContext = aiCore.coachContext as unknown as (a: { settings: Settings; history: Record<string, unknown>[]; now?: number }) => string;
+export const coachContext = aiCore.coachContext as (a?: { burned?: number; need?: number }) => string;
+export const DAY_COMMENT_SYSTEM = aiCore.DAY_COMMENT_SYSTEM as string;
+export const dayReport = aiCore.dayReport as (a: { meals: Meal[]; burned?: number; need?: number }) => string;
 export const planSystem = aiCore.planSystem as (exercises?: Record<string, Exercise>) => string;
 export const validatePlan = aiCore.validatePlan as (raw: unknown, exercises?: Record<string, Exercise>) => ValidPlan | null;
 export const planFromAi = aiCore.planFromAi as (valid: ValidPlan, now?: number) => UserPlan;
@@ -149,3 +152,14 @@ export const loadMeals = storeJs.loadMeals as () => Meal[];
 export const saveMeals = storeJs.saveMeals as (meals: Meal[]) => void;
 export const loadPlans = storeJs.loadPlans as () => UserPlan[];
 export const savePlans = storeJs.savePlans as (plans: UserPlan[]) => void;
+
+export const MEAL_SLOTS = nutrition.MEAL_SLOTS as { id: SlotId; label: string }[];
+export const slotLabel = nutrition.slotLabel as (id?: string) => string;
+export const slotForHour = nutrition.slotForHour as (hour: number) => SlotId;
+export const dailyTarget = nutrition.dailyTarget as (s: Settings) => number;
+export interface DayRow { day: string; eaten: number; burned: number; target: number; balance: number; logged: boolean }
+export interface Totals { days: DayRow[]; eaten: number; burned: number; target: number; balance: number; logged: number }
+export const periodRange = nutrition.periodRange as (kind: 'day' | 'week' | 'month', now?: number) => { from: string; to: string };
+export const periodTotals = nutrition.periodTotals as (a: {
+  meals: Meal[]; history: Record<string, unknown>[]; settings: Settings; from: string; to: string; today?: string;
+}) => Totals;

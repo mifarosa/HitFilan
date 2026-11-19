@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  COACH_SYSTEM, EXERCISES, cleanItems, coachContext, mealPrompt, planFromAi, planSystem, validatePlan, type Settings,
+  COACH_SYSTEM, DAY_COMMENT_SYSTEM, EXERCISES, cleanItems, coachContext, dayReport, mealPrompt, planFromAi, planSystem, validatePlan,
 } from '@/shared';
 
 describe('prompts', () => {
@@ -35,28 +35,32 @@ describe('meal items', () => {
   });
 });
 
-describe('coach context', () => {
-  const now = new Date('2026-11-18T12:00:00').getTime(); // a Wednesday
-  const settings = { weightKg: 75, heightCm: 178, age: 32, sex: 1, weeklyGoal: 3 } as unknown as Settings;
-  const history = [
-    { date: '2026-11-17T20:00:00', name: '40 dk Bisiklet Akışı', durationSec: 2400, kcal: 310, completed: true },
-    { date: '2026-11-09T20:00:00', name: 'Core Bitirici', durationSec: 480, kcal: 60, completed: false },
-  ];
-
-  it('summarizes the user, the week and the latest workouts inside <baglam>', () => {
-    const c = coachContext({ settings, history, now });
-    expect(c.startsWith('<baglam>')).toBe(true);
-    expect(c).toContain('kilo 75 kg, boy 178 cm, yaş 32, erkek');
-    expect(c).toContain('Haftalık hedef: 3');
-    expect(c).toContain('Bu hafta: 1 antrenman.');
-    expect(c).toContain('17 Kas · 40 dk Bisiklet Akışı · 40 dk · ~310 kcal');
-    expect(c).toContain('(yarım)');
+describe('what goes to the model', () => {
+  it('coach context is only the daily need and today\'s burn', () => {
+    const c = coachContext({ burned: 310.4, need: 2100 });
+    expect(c).toBe('<baglam>\nGünlük kalori ihtiyacı: 2100 kcal.\nBugün antrenmanla harcanan: 310 kcal.\n</baglam>');
+    expect(coachContext({ burned: 0, need: 0 })).not.toContain('ihtiyacı');
+    expect(coachContext({ burned: -5 })).toContain('harcanan: 0 kcal');
   });
 
-  it('mentions only what is set', () => {
-    const c = coachContext({ settings: { weightKg: 0 } as unknown as Settings, history: [], now });
-    expect(c).not.toContain('Kullanıcı:');
-    expect(c).toContain('Henüz kayıtlı antrenman yok.');
+  it('day report lists meals in time order with slot and clock time', () => {
+    const r = dayReport({
+      meals: [
+        { id: '2', date: '2026-11-18T20:30:00', name: 'Makarna', kcal: 700, slot: 'evening' },
+        { id: '1', date: '2026-11-18T08:05:00', name: 'Yumurta', kcal: 180, slot: 'morning' },
+      ] as never,
+      burned: 0, need: 2000,
+    });
+    expect(r.indexOf('08:05')).toBeLessThan(r.indexOf('20:30'));
+    expect(r).toContain('08:05 (sabah) Yumurta ~180 kcal');
+    expect(r).toContain('Toplam yenen: 880 kcal');
+    expect(r).toContain('antrenmanla harcanan: 0 kcal');
+  });
+
+  it('day comment rules: use times, ask about sport when it matters, stay safe', () => {
+    expect(DAY_COMMENT_SYSTEM).toContain('saatlerine');
+    expect(DAY_COMMENT_SYSTEM).toContain('Bugün spor yaptın mı?');
+    expect(DAY_COMMENT_SYSTEM).toContain('1200 kcal');
   });
 });
 

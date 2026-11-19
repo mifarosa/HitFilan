@@ -46,7 +46,7 @@ export function AiSettings() {
     if (prefs.consented.includes(p)) return resolve(true);
     Alert.alert(
       `${PROVIDERS[p].label} kullanılsın mı?`,
-      `Yazdığın sorular${prefs.sendContext ? ' ve kısa bir özet (kilo, boy, yaş, hedef, son antrenmanlar)' : ''} doğrudan ${PROVIDERS[p].label} sunucularına gider; bizden geçmez. Ücret ve kota senin hesabından düşer.`,
+      `Yazdığın sorular${prefs.sendContext ? ' ve günlük kalori ihtiyacın ile bugün harcadığın kalori' : ''} doğrudan ${PROVIDERS[p].label} sunucularına gider; bizden geçmez. Ücret ve kota senin hesabından düşer.`,
       [
         { text: 'Vazgeç', style: 'cancel', onPress: () => resolve(false) },
         { text: 'Kabul et', onPress: () => { update({ consented: [...prefs.consented, p] }); resolve(true); } },
@@ -102,7 +102,7 @@ export function AiSettings() {
       <View style={styles.switchRow}>
         <View style={{ flex: 1 }}>
           <Text style={styles.labelBig}>Bağlamı gönder</Text>
-          <Text style={styles.hint}>Koç sorularına kilo, boy, yaş, hedef ve son antrenmanların özeti eklenir</Text>
+          <Text style={styles.hint}>Sorulara yalnızca günlük kalori ihtiyacın ve bugün harcadığın kalori eklenir</Text>
         </View>
         <Switch value={prefs.sendContext} onValueChange={(v) => update({ sendContext: v })} trackColor={{ true: colors.accent }} />
       </View>

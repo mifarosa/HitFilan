@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
-  MAX_CHAT, clearChat, deleteKey, getKey, loadAiPrefs, loadChat, modelOf, saveAiPrefs, saveChat, setKey,
+  deleteKey, getKey, loadAiPrefs, modelOf, saveAiPrefs, setKey,
 } from '@/ai/keyStore';
 import { PROVIDERS } from '@/ai/providers';
 import '@/shared'; // installs the storage adapter
@@ -22,7 +22,7 @@ describe('API key storage', () => {
     await setKey('anthropic', 'sk-ant-SECRET');
     saveAiPrefs({ ...loadAiPrefs(), provider: 'anthropic' });
     const { sharedStorage } = await import('@/storage');
-    for (const k of ['hitfilan.ai', 'hitfilan.coach', 'hitfilan.settings']) {
+    for (const k of ['hitfilan.ai', 'hitfilan.settings']) {
       expect(sharedStorage.getItem(k) ?? '').not.toContain('SECRET');
     }
   });
@@ -31,7 +31,7 @@ describe('API key storage', () => {
 describe('AI preferences and chat', () => {
   beforeEach(async () => {
     const { sharedStorage } = await import('@/storage');
-    for (const k of ['hitfilan.ai', 'hitfilan.coach']) sharedStorage.removeItem(k);
+    for (const k of ['hitfilan.ai']) sharedStorage.removeItem(k);
   });
 
   it('defaults, model fallback and consent per provider', () => {
@@ -46,17 +46,9 @@ describe('AI preferences and chat', () => {
     expect(q.sendContext).toBe(false);
   });
 
-  it('keeps the last messages only and survives junk', async () => {
-    saveChat(Array.from({ length: 50 }, (_, i) => ({ role: i % 2 ? 'assistant' : 'user', content: `m${i}` })));
-    const chat = loadChat();
-    expect(chat).toHaveLength(MAX_CHAT);
-    expect(chat.at(-1)?.content).toBe('m49');
+  it('survives junk preferences', async () => {
     const { sharedStorage } = await import('@/storage');
-    sharedStorage.setItem('hitfilan.coach', '[{"role":"system","content":"x"},{"nope":1},"x"]');
-    expect(loadChat()).toEqual([]);
     sharedStorage.setItem('hitfilan.ai', 'not json');
     expect(loadAiPrefs().provider).toBe('gemini');
-    clearChat();
-    expect(loadChat()).toEqual([]);
   });
 });

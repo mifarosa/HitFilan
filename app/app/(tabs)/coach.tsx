@@ -2,10 +2,13 @@ import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { addMeals, analyzeMeal, askCoach, deleteMeal, proposePlan, savePlan, todayMeals, type AiConfig } from '@/ai/features';
-import { clearChat, getKey, loadAiPrefs, loadChat, modelOf, saveChat } from '@/ai/keyStore';
-import { AiError, PROVIDERS, type Msg } from '@/ai/providers';
-import { EXERCISES, dayBalance, dayOf, loadHistory, loadMeals, loadSettings, type MealItem, type ValidPlan } from '@/shared';
+import { addMeals, analyzeMeal, askCoach, commentDay, deleteMeal, proposePlan, savePlan, todayMeals, type AiConfig } from '@/ai/features';
+import { getKey, loadAiPrefs, modelOf } from '@/ai/keyStore';
+import { AiError, PROVIDERS } from '@/ai/providers';
+import {
+  EXERCISES, MEAL_SLOTS, loadHistory, loadMeals, loadSettings, periodRange, periodTotals, slotForHour, slotLabel,
+  type MealItem, type SlotId, type ValidPlan,
+} from '@/shared';
 import { colors } from '@/theme';
 
 type Tab = 'ask' | 'plan' | 'meal';
@@ -72,51 +75,32 @@ type Run = <T>(fn: (c: AiConfig) => Promise<T>) => Promise<T | { error: string }
 const isError = (v: unknown): v is { error: string } => !!v && typeof v === 'object' && 'error' in (v as object);
 
 function Ask({ run }: { run: Run }) {
-  const [msgs, setMsgs] = useState<Msg[]>(() => loadChat());
   const [text, setText] = useState('');
+  const [answer, setAnswer] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const scroll = useRef<{ scrollToEnd: (o?: { animated?: boolean }) => void } | null>(null);
 
   const send = async () => {
     const q = text.trim();
     if (!q || busy) return;
-    setText('');
-    setError('');
-    setBusy(true);
-    const history = msgs;
-    const withQ = [...history, { role: 'user' as const, content: q }];
-    setMsgs(withQ);
-    const r = await run((c) => askCoach(history, q, c));
+    setError(''); setAnswer(''); setBusy(true);
+    const r = await run((c) => askCoach(q, c));
     if (isError(r)) setError(r.error);
-    else {
-      const next = [...withQ, { role: 'assistant' as const, content: r }];
-      setMsgs(next);
-      saveChat(next);
-    }
+    else setAnswer(r);
     setBusy(false);
   };
 
   return (
-    <>
-      <ScrollView ref={scroll as never} style={{ flex: 1 }} contentContainerStyle={styles.content} onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: true })} keyboardShouldPersistTaps="handled">
-        {!msgs.length ? <Text style={styles.hint}>Antrenman, toparlanma ya da beslenme hakkında sor. Yanıtlar tahmindir, tıbbi tavsiye değildir.</Text> : null}
-        {msgs.map((m, i) => (
-          <View key={i} style={[styles.bubble, m.role === 'user' ? styles.me : styles.coach]}>
-            <Text style={styles.bubbleText} selectable>{m.content}</Text>
-          </View>
-        ))}
-        {busy ? <ActivityIndicator color={colors.accent} /> : null}
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-        {msgs.length ? <Pressable onPress={() => { clearChat(); setMsgs([]); }}><Text style={styles.link}>Sohbeti temizle</Text></Pressable> : null}
-      </ScrollView>
-      <View style={styles.composer}>
-        <TextInput style={[styles.input, { flex: 1 }]} value={text} onChangeText={setText} placeholder="Bir şey sor…" placeholderTextColor={colors.muted} multiline maxLength={1000} accessibilityLabel="Soru" />
-        <Pressable onPress={send} disabled={busy || !text.trim()} style={[styles.send, (busy || !text.trim()) && { opacity: 0.4 }]} accessibilityRole="button">
-          <Text style={styles.sendText}>Gönder</Text>
-        </Pressable>
-      </View>
-    </>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <Text style={styles.hint}>Antrenman, toparlanma ya da beslenme hakkında sor. Her soru tek başına gider; yanında yalnızca günlük kalori ihtiyacın ve bugün harcadığın kalori olur. Yanıtlar tahmindir, tıbbi tavsiye değildir.</Text>
+      <TextInput style={[styles.input, { minHeight: 80 }]} value={text} onChangeText={setText} placeholder="Bir şey sor…" placeholderTextColor={colors.muted} multiline maxLength={1000} accessibilityLabel="Soru" />
+      <Pressable onPress={send} disabled={busy || !text.trim()} style={[styles.primary, (busy || !text.trim()) && { opacity: 0.4 }]} accessibilityRole="button">
+        <Text style={styles.primaryText}>{busy ? 'Düşünüyor…' : 'Sor'}</Text>
+      </Pressable>
+      {busy ? <ActivityIndicator color={colors.accent} /> : null}
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {answer ? <View style={styles.card}><Text style={styles.answer} selectable>{answer}</Text></View> : null}
+    </ScrollView>
   );
 }
 
@@ -169,17 +153,26 @@ function PlanBuilder({ run, onOpenHome }: { run: Run; onOpenHome: () => void }) 
   );
 }
 
+const PERIODS: ['day' | 'week' | 'month', string][] = [['day', 'Gün'], ['week', 'Hafta'], ['month', 'Ay']];
+const hhmm = (iso: string) => new Date(iso).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+const sign = (n: number) => (n > 0 ? `+${n}` : String(n));
+
 function Meals({ run }: { run: Run }) {
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [items, setItems] = useState<MealItem[] | null>(null);
+  const [slot, setSlot] = useState<SlotId>(() => slotForHour(new Date().getHours()));
+  const [period, setPeriod] = useState<'day' | 'week' | 'month'>('day');
+  const [comment, setComment] = useState('');
+  const [commenting, setCommenting] = useState(false);
   const [, bump] = useState(0);
 
   const analyze = async () => {
     const q = text.trim();
     if (!q || busy) return;
     setBusy(true); setError(''); setItems(null);
+    setSlot(slotForHour(new Date().getHours()));
     const r = await run((c) => analyzeMeal(q, c));
     if (isError(r)) setError(r.error);
     else if (!r.length) setError('Bir şey çıkaramadım. Ne yediğini biraz daha açık yaz.');
@@ -187,21 +180,71 @@ function Meals({ run }: { run: Run }) {
     setBusy(false);
   };
 
+  const discuss = async () => {
+    setCommenting(true); setComment(''); setError('');
+    const r = await run((c) => commentDay(c));
+    if (isError(r)) setError(r.error); else setComment(r);
+    setCommenting(false);
+  };
+
   const meals = todayMeals();
-  const bal = dayBalance({ meals: loadMeals(), history: loadHistory(), day: dayOf(new Date().toISOString()), settings: loadSettings() });
+  const { from, to } = periodRange(period);
+  const t = periodTotals({ meals: loadMeals(), history: loadHistory(), settings: loadSettings(), from, to });
+  const missing = t.target === 0;
 
   return (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Bugün</Text>
-        <Text style={styles.row}>Yenen {bal.eaten} kcal · Yakılan ~{bal.burned} kcal · Hedef {bal.target} kcal</Text>
-        {meals.map((m) => (
-          <View key={m.id} style={styles.mealRow}>
-            <Text style={[styles.row, { flex: 1 }]}>{m.name} · {m.kcal} kcal</Text>
-            <Pressable onPress={() => { deleteMeal(m.id); bump((n) => n + 1); }} accessibilityLabel={`${m.name} sil`}><Text style={styles.link}>Sil</Text></Pressable>
-          </View>
-        ))}
+        <View style={styles.segs}>
+          {PERIODS.map(([id, label]) => (
+            <Pressable key={id} onPress={() => setPeriod(id)} style={[styles.seg, period === id && styles.segOn]} accessibilityRole="button">
+              <Text style={[styles.segText, period === id && styles.segTextOn]}>{label}</Text>
+            </Pressable>
+          ))}
+        </View>
+        <Text style={styles.big}>{sign(t.balance)} kcal</Text>
+        <Text style={styles.row}>Yenen {t.eaten} · Yakılan ~{t.burned} · İhtiyaç {t.target}</Text>
+        {missing ? <Text style={styles.hint}>İhtiyaç hesaplanamadı: Ayarlar'dan kilo, boy, yaş ve cinsiyeti gir.</Text> : null}
+        {period !== 'day' ? (
+          <>
+            <Text style={styles.hint}>
+              {t.logged} günde kayıt var{t.logged ? ` · günlük ortalama yenen ${Math.round(t.eaten / t.logged)} kcal` : ''}. Pozitif fazla, negatif açık demek.
+            </Text>
+            {t.days.map((d) => (
+              <Text key={d.day} style={[styles.row, !d.logged && { color: colors.muted }]}>
+                {d.day.slice(8)}.{d.day.slice(5, 7)} · {d.logged ? `yenen ${d.eaten} · ${sign(d.balance)}` : 'kayıt yok'}
+              </Text>
+            ))}
+          </>
+        ) : null}
       </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Bugünün öğünleri</Text>
+        {!meals.length ? <Text style={styles.hint}>Henüz bir şey eklenmedi.</Text> : null}
+        {MEAL_SLOTS.map((sl) => {
+          const list = meals.filter((m) => (m.slot ?? 'snack') === sl.id);
+          return list.length ? (
+            <View key={sl.id} style={{ gap: 4 }}>
+              <Text style={styles.slot}>{sl.label}</Text>
+              {list.map((m) => (
+                <View key={m.id} style={styles.mealRow}>
+                  <Text style={[styles.row, { flex: 1 }]}>{hhmm(m.date)} · {m.name} · {m.kcal} kcal</Text>
+                  <Pressable onPress={() => { deleteMeal(m.id); bump((n) => n + 1); }} accessibilityLabel={`${m.name} sil`}><Text style={styles.link}>Sil</Text></Pressable>
+                </View>
+              ))}
+            </View>
+          ) : null;
+        })}
+        {meals.length ? (
+          <Pressable onPress={discuss} disabled={commenting} style={[styles.ghost, commenting && { opacity: 0.4 }]} accessibilityRole="button">
+            <Text style={styles.ghostText}>{commenting ? 'Yorumlanıyor…' : 'Günü yorumla'}</Text>
+          </Pressable>
+        ) : null}
+        {comment ? <Text style={styles.answer} selectable>{comment}</Text> : null}
+        {meals.length ? <Text style={styles.hint}>"Günü yorumla" bugünün öğünlerini (ad, kcal, saat) ve kalori sayılarını seçtiğin sağlayıcıya gönderir.</Text> : null}
+      </View>
+
       <Text style={styles.hint}>Ne yediğini yaz, kalorisini tahmin edeyim. Örn. "2 dilim ekmek, 2 yumurta, çay".</Text>
       <TextInput style={[styles.input, { minHeight: 70 }]} value={text} onChangeText={setText} multiline maxLength={500} placeholder="Yediklerin…" placeholderTextColor={colors.muted} accessibilityLabel="Öğün" />
       <Pressable onPress={analyze} disabled={busy || !text.trim()} style={[styles.primary, (busy || !text.trim()) && { opacity: 0.4 }]} accessibilityRole="button">
@@ -211,19 +254,26 @@ function Meals({ run }: { run: Run }) {
       {items ? (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Tahmin (düzenleyebilirsin)</Text>
+          <View style={styles.segs}>
+            {MEAL_SLOTS.map((sl) => (
+              <Pressable key={sl.id} onPress={() => setSlot(sl.id)} style={[styles.seg, slot === sl.id && styles.segOn]} accessibilityRole="button" accessibilityLabel={`Öğün: ${sl.label}`}>
+                <Text style={[styles.segText, slot === sl.id && styles.segTextOn]}>{sl.label}</Text>
+              </Pressable>
+            ))}
+          </View>
           {items.map((it, i) => (
             <View key={i} style={styles.mealRow}>
-              <TextInput style={[styles.input, { flex: 1 }]} value={it.name} onChangeText={(t) => setItems(items.map((x, j) => (j === i ? { ...x, name: t } : x)))} accessibilityLabel="Yiyecek adı" />
+              <TextInput style={[styles.input, { flex: 1 }]} value={it.name} onChangeText={(v) => setItems(items.map((x, j) => (j === i ? { ...x, name: v } : x)))} accessibilityLabel="Yiyecek adı" />
               <TextInput
                 style={[styles.input, { width: 72, textAlign: 'right' }]} keyboardType="number-pad" value={String(it.kcal)} accessibilityLabel="kcal"
-                onChangeText={(t) => setItems(items.map((x, j) => (j === i ? { ...x, kcal: Math.max(0, Math.round(Number(t.replace(/\D/g, '')) || 0)) } : x)))}
+                onChangeText={(v) => setItems(items.map((x, j) => (j === i ? { ...x, kcal: Math.max(0, Math.round(Number(v.replace(/\D/g, '')) || 0)) } : x)))}
               />
               <Pressable onPress={() => setItems(items.filter((_, j) => j !== i))} accessibilityLabel="Kaldır"><Text style={styles.link}>✕</Text></Pressable>
             </View>
           ))}
-          <Text style={styles.hint}>Toplam {items.reduce((s, x) => s + x.kcal, 0)} kcal · tahmindir</Text>
-          <Pressable onPress={() => { addMeals(items); setItems(null); setText(''); }} style={styles.primary} accessibilityRole="button">
-            <Text style={styles.primaryText}>Bugüne ekle</Text>
+          <Text style={styles.hint}>Toplam {items.reduce((s, x) => s + x.kcal, 0)} kcal · tahmindir · saat şimdi olarak kaydedilir ({slotLabel(slot)})</Text>
+          <Pressable onPress={() => { addMeals(items, slot); setItems(null); setText(''); }} style={styles.primary} accessibilityRole="button">
+            <Text style={styles.primaryText}>Ekle</Text>
           </Pressable>
         </View>
       ) : null}
@@ -260,5 +310,10 @@ const styles = StyleSheet.create({
   card: { borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, padding: 16, gap: 8 },
   cardTitle: { color: colors.text, fontSize: 16, fontWeight: '700' },
   row: { color: colors.text, fontSize: 13 },
+  big: { color: colors.text, fontSize: 28, fontWeight: '700' },
+  slot: { color: colors.accent, fontSize: 13, fontWeight: '700' },
+  answer: { color: colors.text, fontSize: 16 },
+  ghost: { borderRadius: 10, paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderColor: colors.line },
+  ghostText: { color: colors.text, fontSize: 13, fontWeight: '700' },
   mealRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 });

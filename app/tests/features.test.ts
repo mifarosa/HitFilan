@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { addMeals, analyzeMeal, askCoach, deleteMeal, proposePlan, savePlan, todayMeals } from '@/ai/features';
+import { addMeals, analyzeMeal, askCoach, commentDay, deleteMeal, proposePlan, savePlan, todayMeals } from '@/ai/features';
 import { loadMeals, loadPlans, saveSettings, loadSettings } from '@/shared';
 
 const reply = (text: string) => vi.fn(async () => new Response(JSON.stringify({ choices: [{ message: { content: text } }] }), { status: 200 }));
@@ -14,30 +14,42 @@ describe('meal analysis', () => {
   });
 
   it('saves meals only through addMeals, newest first, and can delete them', () => {
-    addMeals([{ name: ' Simit ', kcal: 280.4 }, { name: '', kcal: 5 }, { name: 'Çay', kcal: 0 }]);
-    expect(todayMeals().map((m) => `${m.name}:${m.kcal}`)).toEqual(['Simit:280']);
+    addMeals([{ name: ' Simit ', kcal: 280.4 }, { name: '', kcal: 5 }, { name: 'Çay', kcal: 0 }], 'morning');
+    expect(todayMeals().map((m) => `${m.name}:${m.kcal}:${m.slot}`)).toEqual(['Simit:280:morning']);
     deleteMeal(loadMeals()[0].id);
     expect(todayMeals()).toEqual([]);
   });
 });
 
 describe('coach', () => {
-  it('sends the rules and, if allowed, the context; the key is not in the body', async () => {
-    saveSettings({ ...loadSettings(), weightKg: 81 });
+  it('sends one question with only the energy numbers; no chat, no profile, no key', async () => {
+    saveSettings({ ...loadSettings(), weightKg: 81, heightCm: 180, age: 30, sex: 1 });
     const f = reply('Su iç.');
-    expect(await askCoach([{ role: 'user', content: 'a' }, { role: 'assistant', content: 'b' }], 'Bugün ne yapayım?', cfg(f))).toBe('Su iç.');
+    expect(await askCoach('Bugün ne yapayım?', cfg(f))).toBe('Su iç.');
     const b = bodyOf(f);
-    expect(b.messages[0].content).toContain('koçusun');
-    expect(b.messages[0].content).toContain('<baglam>\n');
-    expect(b.messages[0].content).toContain('kilo 81 kg');
-    expect(b.messages.at(-1)).toEqual({ role: 'user', content: 'Bugün ne yapayım?' });
+    expect(b.messages).toHaveLength(2); // system + the question
+    expect(b.messages[1]).toEqual({ role: 'user', content: 'Bugün ne yapayım?' });
+    expect(b.messages[0].content).toContain('Günlük kalori ihtiyacı:');
+    expect(b.messages[0].content).toContain('harcanan:');
+    expect(b.messages[0].content).not.toContain('81 kg');
+    expect(b.messages[0].content).not.toContain('180 cm');
     expect(JSON.stringify(b)).not.toContain('"k"');
   });
 
-  it('leaves the context out when the user turned it off', async () => {
+  it('leaves the numbers out when the user turned the context off', async () => {
     const f = reply('ok');
-    await askCoach([], 'merhaba', cfg(f, false));
+    await askCoach('merhaba', cfg(f, false));
     expect(bodyOf(f).messages[0].content).not.toContain('<baglam>\n');
+  });
+
+  it('comments the day with meal times', async () => {
+    addMeals([{ name: 'Pilav', kcal: 500 }], 'evening');
+    const f = reply('Akşam biraz ağır.');
+    expect(await commentDay(cfg(f))).toBe('Akşam biraz ağır.');
+    const b = bodyOf(f);
+    expect(b.messages[0].content).toContain('Bugün spor yaptın mı?');
+    expect(b.messages[1].content).toContain('(akşam) Pilav ~500 kcal');
+    expect(b.messages[1].content).toMatch(/\d\d:\d\d/);
   });
 });
 
