@@ -1499,3 +1499,6 @@ details.ex.lib summary { flex-wrap: nowrap; gap: 12px; }
   .runner.video-on .timeline { display: none; } /* the video needs the height; the totals still show progress */
   .runner.video-on .targets { display: none; }
 }
+
+.nut-list li.muted { color: var(--muted); }
+#view-nutrition h4 { margin: 14px 0 0; font-size: 13px; color: var(--muted); }

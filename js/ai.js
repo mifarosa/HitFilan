@@ -2,13 +2,14 @@
 // (Gemini Developer API, free tier: needs no billing account).
 // The SDK is only downloaded when the user asks for an estimate.
 import { firebaseConfig } from './firebase-config.js';
-import { cleanItems, mealPrompt } from './ai-core.js';
+import { DAY_COMMENT_SYSTEM, cleanItems, dayReport, mealPrompt } from './ai-core.js';
 
 export { cleanItems };
 
 const SDK = 'https://www.gstatic.com/firebasejs/12.19.0';
 const MODEL = 'gemini-2.5-flash';
 let modelPromise = null;
+let commentPromise = null;
 
 function loadModel() {
   if (!modelPromise) {
@@ -42,4 +43,27 @@ export async function estimateMeal(text) {
   const model = await loadModel();
   const result = await model.generateContent(mealPrompt(text));
   return cleanItems(JSON.parse(result.response.text()));
+}
+
+// A short comment on today's meals using the times they were entered. Sends only the day report
+// (meal names, kcal, clock times, eaten / burned / daily need), nothing else about the user.
+export async function commentDay({ meals, burned, need }) {
+  if (!firebaseConfig) throw new Error('no-config');
+  if (!commentPromise) {
+    commentPromise = (async () => {
+      const [app, ai] = await Promise.all([import(`${SDK}/firebase-app.js`), import(`${SDK}/firebase-ai.js`)]);
+      const firebaseApp = app.getApps()[0] || app.initializeApp(firebaseConfig);
+      return ai.getGenerativeModel(ai.getAI(firebaseApp, { backend: new ai.GoogleAIBackend() }), {
+        model: MODEL,
+        systemInstruction: DAY_COMMENT_SYSTEM,
+        generationConfig: { maxOutputTokens: 500 },
+      });
+    })().catch((err) => {
+      commentPromise = null;
+      throw err;
+    });
+  }
+  const model = await commentPromise;
+  const result = await model.generateContent(dayReport({ meals, burned, need }));
+  return result.response.text().trim();
 }

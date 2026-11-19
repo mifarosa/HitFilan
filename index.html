@@ -182,12 +182,15 @@
     <section id="view-nutrition" class="view" aria-label="Beslenme">
       <div class="card">
         <button type="button" class="btn ghost" data-goto="home">‹ Geri</button>
-        <h3>Bugünkü kalori dengesi</h3>
+        <h3>Kalori dengesi</h3>
+        <div class="chips seg" id="nut-period" role="group" aria-label="Dönem"></div>
         <div id="nut-summary"></div>
+        <div id="nut-period-days"></div>
       </div>
       <div id="nut-suggest"></div>
       <div class="card">
         <h3>Ne yedin?</h3>
+        <div class="chips seg" id="nut-slots" role="group" aria-label="Öğün"></div>
         <textarea id="nut-text" rows="2" maxlength="300" placeholder="Örn. 2 dilim ekmek, 1 haşlanmış yumurta, çay"></textarea>
         <button type="button" class="btn primary full" id="nut-ai">Kalorisini hesapla</button>
         <p class="meta" id="nut-status" role="status"></p>
@@ -201,6 +204,9 @@
       <div class="card">
         <h3>Bugün yediklerin</h3>
         <div id="nut-list"></div>
+        <button type="button" class="btn ghost full" id="nut-comment" hidden>Günü yorumla</button>
+        <p class="meta" id="nut-comment-out" role="status"></p>
+        <p class="fineprint" id="nut-comment-note" hidden>“Günü yorumla” bugünün öğünlerini (ad, kcal, saat) ve kalori sayılarını yapay zekâya gönderir.</p>
       </div>
     </section>
 
