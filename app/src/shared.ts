@@ -7,6 +7,8 @@ import * as stepsJs from '@shared/steps.js';
 import { SequenceTimer as SequenceTimerJs } from '@shared/timer.js';
 import * as videoCore from '@shared/video-core.js';
 import * as storeJs from '@shared/store.js';
+import * as aiCore from '@shared/ai-core.js';
+import * as nutrition from '@shared/nutrition-core.js';
 
 /** One step of a workout, as built by buildSteps(). */
 export interface Step {
@@ -110,3 +112,40 @@ export const loadSettings = storeJs.loadSettings as () => Settings;
 export const saveSettings = storeJs.saveSettings as (settings: Settings) => void;
 export const addHistory = storeJs.addHistory as (entry: Record<string, unknown>) => void;
 export const loadHistory = storeJs.loadHistory as () => Record<string, unknown>[];
+
+// ---- AI (prompts, context and validators: js/ai-core.js) and the calorie balance (js/nutrition-core.js) ----
+export interface MealItem { name: string; kcal: number }
+export interface Meal extends MealItem { id: string; date: string }
+export interface PlanItem {
+  type: 'exercise';
+  exercise: string;
+  sets: number;
+  reps?: number;
+  dur: number;
+  kg?: number;
+  rest: number;
+}
+export interface ValidPlan { name: string; note: string; items: PlanItem[]; dropped: number }
+export interface UserPlan {
+  id: string;
+  name: string;
+  sections: { name: string; repeat: number; items: PlanItem[] }[];
+}
+
+export const mealPrompt = aiCore.mealPrompt as (text: string) => string;
+export const cleanItems = aiCore.cleanItems as (raw: unknown) => MealItem[];
+export const COACH_SYSTEM = aiCore.COACH_SYSTEM as string;
+export const coachContext = aiCore.coachContext as unknown as (a: { settings: Settings; history: Record<string, unknown>[]; now?: number }) => string;
+export const planSystem = aiCore.planSystem as (exercises?: Record<string, Exercise>) => string;
+export const validatePlan = aiCore.validatePlan as (raw: unknown, exercises?: Record<string, Exercise>) => ValidPlan | null;
+export const planFromAi = aiCore.planFromAi as (valid: ValidPlan, now?: number) => UserPlan;
+
+export const dayOf = nutrition.dayOf as (iso: string) => string;
+export const dayBalance = nutrition.dayBalance as (a: {
+  meals: Meal[]; history: Record<string, unknown>[]; day: string; settings: Settings;
+}) => { eaten: number; burned: number; target: number; balance: number };
+
+export const loadMeals = storeJs.loadMeals as () => Meal[];
+export const saveMeals = storeJs.saveMeals as (meals: Meal[]) => void;
+export const loadPlans = storeJs.loadPlans as () => UserPlan[];
+export const savePlans = storeJs.savePlans as (plans: UserPlan[]) => void;

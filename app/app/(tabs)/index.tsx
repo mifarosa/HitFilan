@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  BIKE_MINUTES, PROGRAMS, buildSteps, estimateKcal, loadSettings, programInfo, saveSettings, totalSeconds,
+  BIKE_MINUTES, PROGRAMS, buildSteps, estimateKcal, loadPlans, loadSettings, programInfo, saveSettings, totalSeconds,
 } from '@/shared';
 import { colors } from '@/theme';
 
@@ -21,6 +21,8 @@ export default function Home() {
       return { id: p.id, name: info.name, desc: info.desc, meta: `${min} dk · ~${estimateKcal(steps, s.weightKg)} kcal` };
     });
   }, [bikeId]);
+
+  const plans = useMemo(() => loadPlans().map((p) => ({ id: p.id, name: p.name, meta: `${p.sections.reduce((n, s) => n + s.items.length, 0)} hareket` })), []);
 
   const pickBike = (min: number) => {
     const id = `bike${min}`;
@@ -49,6 +51,17 @@ export default function Home() {
             <Text style={styles.cardName}>{c.name}</Text>
             <Text style={styles.cardDesc}>{c.desc}</Text>
             <Text style={styles.cardMeta}>{c.meta}</Text>
+          </Pressable>
+        ))}
+        {plans.length ? <Text style={styles.section}>Planlarım</Text> : null}
+        {plans.map((p) => (
+          <Pressable
+            key={p.id}
+            onPress={() => router.push({ pathname: '/workout', params: { id: p.id } })}
+            style={({ pressed }) => [styles.card, pressed && { opacity: 0.8 }]}
+          >
+            <Text style={styles.cardName}>{p.name}</Text>
+            <Text style={styles.cardMeta}>{p.meta}</Text>
           </Pressable>
         ))}
       </ScrollView>

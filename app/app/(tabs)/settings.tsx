@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { loadSettings, saveSettings, type Settings } from '@/shared';
+import { AiSettings } from '@/ui/AiSettings';
 import { colors } from '@/theme';
 
 type NumKey = 'weightKg' | 'resEasy' | 'resModerate' | 'resHard';
@@ -74,6 +75,7 @@ export default function SettingsScreen() {
             {flag('vibrate', 'Titreşim')}
           </>
         ))}
+        {group('ai', 'Yapay zekâ (kendi anahtarın)', <AiSettings />)}
       </ScrollView>
     </SafeAreaView>
   );

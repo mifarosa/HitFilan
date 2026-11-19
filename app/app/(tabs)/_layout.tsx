@@ -16,6 +16,7 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen name="index" options={{ title: 'Ana sayfa', tabBarIcon: glyph('⌂') }} />
+      <Tabs.Screen name="coach" options={{ title: 'Koç', tabBarIcon: glyph('✦') }} />
       <Tabs.Screen name="settings" options={{ title: 'Ayarlar', tabBarIcon: glyph('⚙') }} />
     </Tabs>
   );

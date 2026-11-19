@@ -43,3 +43,11 @@ folding groups (body, training, sound). The tiny sizes inside the sideways card 
 
 Programs and the workout screen (A1). Coming in order: history, goals and plans; free counter and moves;
 calories and share images; Firebase backup; release.
+
+## Yapay zekâ (kendi anahtarınla)
+
+Ayarlar > Yapay zekâ: Gemini, OpenAI veya Anthropic anahtarını gir. Anahtar yalnızca `expo-secure-store`'da
+(Keychain, bu cihaz) durur; istekler telefondan doğrudan sağlayıcıya gider. Koç sekmesi: **Sor** (sohbet, son 30 mesaj
+cihazda), **Plan kur** (doğrulanmış plan önerisi, onayınla "Planlarım"a kaydolur), **Öğün** (kalori tahmini, düzenleyip
+bugüne eklersin). Prompt'lar ve doğrulayıcılar `js/ai-core.js`'te (web ile ortak), sağlayıcı katmanı `src/ai/`.
+Canlı sağlayıcı yanıtları geliştirme ortamında denenemedi; model adları Ayarlar'dan değiştirilebilir.
