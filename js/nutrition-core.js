@@ -70,3 +70,60 @@ export function suggest(surplus, candidates) {
     pick(candidates.filter((c) => c.kind !== 'bike')),
   ].filter(Boolean);
 }
+
+/* ---------- Meal times and periods ---------- */
+
+export const MEAL_SLOTS = [
+  { id: 'morning', label: 'Sabah' },
+  { id: 'noon', label: 'Öğle' },
+  { id: 'evening', label: 'Akşam' },
+  { id: 'snack', label: 'Ara' },
+];
+
+export const slotLabel = (id) => MEAL_SLOTS.find((s) => s.id === id)?.label ?? '';
+
+// The slot to preselect for a clock hour; the user can change it.
+export function slotForHour(hour) {
+  if (hour >= 5 && hour < 11) return 'morning';
+  if (hour >= 11 && hour < 16) return 'noon';
+  if (hour >= 18 && hour < 23) return 'evening';
+  return 'snack';
+}
+
+const pad = (n) => String(n).padStart(2, '0');
+const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+// [from, to] local days (inclusive) of the week (Monday first) or month that contains `now`.
+export function periodRange(kind, now = Date.now()) {
+  const d = new Date(now);
+  d.setHours(12, 0, 0, 0);
+  if (kind === 'month') {
+    return { from: ymd(new Date(d.getFullYear(), d.getMonth(), 1)), to: ymd(new Date(d.getFullYear(), d.getMonth() + 1, 0)) };
+  }
+  if (kind === 'week') {
+    const start = new Date(d);
+    start.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    return { from: ymd(start), to: ymd(end) };
+  }
+  return { from: ymd(d), to: ymd(d) };
+}
+
+// Per-day rows and totals for a day range. Days after `today` are left out so a half-finished week or month does
+// not count the future as "no food eaten". Days with nothing logged still count their target (they are in the
+// range, up to today); `logged` tells how many days have any meal, so averages can be honest.
+export function periodTotals({ meals, history, settings, from, to, today = ymd(new Date()) }) {
+  const days = [];
+  const [fy, fm, fd] = from.split('-').map(Number);
+  const cur = new Date(fy, fm - 1, fd, 12);
+  for (let guard = 0; guard < 400; guard++) {
+    const day = ymd(cur);
+    if (day > to || day > today) break;
+    days.push({ day, ...dayBalance({ meals, history, day, settings }), logged: meals.some((m) => dayOf(m.date) === day) });
+    cur.setDate(cur.getDate() + 1);
+  }
+  const sum = (k) => days.reduce((s, r) => s + r[k], 0);
+  const logged = days.filter((r) => r.logged).length;
+  return { days, eaten: sum('eaten'), burned: sum('burned'), target: sum('target'), balance: sum('balance'), logged };
+}

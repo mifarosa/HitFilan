@@ -13,7 +13,10 @@
       "bundleIdentifier": "com.mifarosa.hitfilan",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "CFBundleLocalizations": ["tr", "en"]
+        "CFBundleLocalizations": [
+          "tr",
+          "en"
+        ]
       }
     },
     "android": {
@@ -22,21 +25,36 @@
         "foregroundImage": "./assets/android-icon-foreground.png"
       },
       "package": "com.mifarosa.hitfilan",
-      "permissions": ["VIBRATE", "WAKE_LOCK", "POST_NOTIFICATIONS", "SCHEDULE_EXACT_ALARM"]
+      "permissions": [
+        "VIBRATE",
+        "WAKE_LOCK",
+        "POST_NOTIFICATIONS",
+        "SCHEDULE_EXACT_ALARM"
+      ]
     },
     "plugins": [
       "expo-router",
       "expo-sqlite",
+      "expo-secure-store",
       [
         "expo-notifications",
         {
           "color": "#ff7a1a",
-          "sounds": ["./assets/sounds/up.wav", "./assets/sounds/down.wav", "./assets/sounds/warn.wav", "./assets/sounds/finish.wav"]
+          "sounds": [
+            "./assets/sounds/up.wav",
+            "./assets/sounds/down.wav",
+            "./assets/sounds/warn.wav",
+            "./assets/sounds/finish.wav"
+          ]
         }
       ],
       [
         "expo-splash-screen",
-        { "backgroundColor": "#101418", "image": "./assets/splash-icon.png", "imageWidth": 160 }
+        {
+          "backgroundColor": "#101418",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160
+        }
       ]
     ],
     "owner": "mifarosacom"

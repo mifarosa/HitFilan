@@ -1500,6 +1500,9 @@ details.ex.lib summary { flex-wrap: nowrap; gap: 12px; }
   .runner.video-on .targets { display: none; }
 }
 
+.nut-list li.muted { color: var(--muted); }
+#view-nutrition h4 { margin: 14px 0 0; font-size: 13px; color: var(--muted); }
+
 /* ---------- Progress switch (calendar / goals) and folding settings groups ---------- */
 .view-switch { margin-bottom: 4px; }
 .settings-groups { display: grid; gap: 12px; }
