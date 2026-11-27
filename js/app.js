@@ -1,3 +1,4 @@
+import { isWalk, walkDetails, walkDistanceText, walkEntry } from './walk-core.js';
 import { EXERCISES, LEVELS, PROGRAMS, BIKE_MINUTES, getProgram } from './data.js';
 import {
   buildSteps, totalSeconds, estimateKcal, formatTime, programInfo, historyEntry,
@@ -600,6 +601,7 @@ function addDays(d, n) {
 
 // Bike (and bike + core) vs strength circuits, for the dot colours.
 function entryKind(e) {
+  if (isWalk(e)) return 'walk';
   const p = getProgram(e.programId);
   if (p?.kind === 'circuit') return 'strength';
   if (p?.kind === 'custom') return p.sections.some((s) => s.items.some((i) => i.type === 'bike')) ? 'bike' : 'strength';
@@ -742,7 +744,7 @@ function historyItemHTML(e) {
       <div class="history-right">
         <span class="badge ${e.completed ? 'ok' : 'partial'}">${e.completed ? 'Tamamlandı' : 'Yarım'}</span>
         ${e.rpe ? `<span class="badge rpe-${e.rpe}">${RPE_LABELS[e.rpe]}</span>` : ''}
-        <span class="meta">${formatTime(e.durationSec)} · ~${e.kcal} kcal</span>
+        <span class="meta">${formatTime(e.durationSec)}${isWalk(e) && e.km ? ` · ${walkDistanceText(e)}` : ''} · ~${e.kcal} kcal</span>
       </div>
       <button class="icon-btn small" data-share="${e.id}" aria-label="Paylaşım görseli">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M8 8l4-4 4 4M5 13v6h14v-6"/></svg>
@@ -1243,11 +1245,61 @@ $('#finish-close').addEventListener('click', closeRunner);
 
 /* ---------- Share picture ---------- */
 
+/* ---------- Manual walk ---------- */
+
+const pad2 = (n) => String(n).padStart(2, '0');
+
+function walkFormEntry() {
+  return walkEntry({
+    date: new Date(`${$('#walk-date').value}T${$('#walk-time').value || '12:00'}`).toISOString(),
+    minutes: $('#walk-min').value,
+    km: $('#walk-km').value,
+    weightKg: loadSettings().weightKg,
+  });
+}
+
+function walkPreview() {
+  const d = walkDetails({ minutes: $('#walk-min').value, km: $('#walk-km').value, weightKg: loadSettings().weightKg });
+  $('#walk-preview').textContent = d.ok
+    ? `${d.estimated ? '~' : ''}${d.minutes} dk · ${d.estimated ? '~' : ''}${String(d.km).replace('.', ',')} km · ~${d.kcal} kcal`
+    : (($('#walk-min').value || $('#walk-km').value) ? d.error : '');
+}
+
+$('#walk-add').addEventListener('click', () => {
+  const now = new Date();
+  const day = selectedDay && selectedDay <= dayKey(now) ? selectedDay : dayKey(now);
+  $('#walk-date').value = day;
+  $('#walk-date').max = dayKey(now);
+  $('#walk-time').value = `${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+  $('#walk-min').value = '';
+  $('#walk-km').value = '';
+  $('#walk-preview').textContent = '';
+  $('#walk-dialog').showModal();
+});
+$('#walk-min').addEventListener('input', walkPreview);
+$('#walk-km').addEventListener('input', walkPreview);
+$('#walk-close').addEventListener('click', () => $('#walk-dialog').close());
+$('#walk-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const entry = walkFormEntry();
+  if (!entry) { walkPreview(); return; }
+  if (new Date(entry.date).getTime() > Date.now() + 60000) {
+    $('#walk-preview').textContent = 'Gelecek bir saat girilemez.';
+    return;
+  }
+  addHistory(entry);
+  $('#walk-dialog').close();
+  selectedDay = dayKey(new Date(entry.date));
+  calMonth = new Date(new Date(entry.date).getFullYear(), new Date(entry.date).getMonth(), 1);
+  renderHistory();
+});
+
 let shareEntry = null;
 let shareStyle = 'card';
 
 // HIIT amount of a finished workout: the hard (bike) or work (circuit) steps it got through.
 function hiitOf(entry) {
+  if (isWalk(entry)) return null;
   try {
     const program = getProgram(entry.programId);
     let t = 0;

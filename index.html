@@ -107,10 +107,13 @@
         <div class="cal-legend">
           <span><i class="dot-bike"></i>Bisiklet</span>
           <span><i class="dot-strength"></i>Kuvvet</span>
+          <span><i class="dot-walk"></i>Yürüyüş</span>
           <span><i class="wk-met"></i>Hedef tamam</span>
         </div>
         <p class="cal-summary" id="cal-summary"></p>
       </div>
+
+      <button type="button" class="btn ghost full" id="walk-add">+ Yürüyüş ekle</button>
 
       <div class="list-head">
         <h2 class="section-title" id="list-title"></h2>
@@ -395,6 +398,22 @@
       <div id="video-recent"></div>
       <p class="fineprint">Video yalnızca uygulama açıkken oynar; ekran kilitlenirse durur. Bazı videolar uygulamada oynatılamaz, onları YouTube’da açabilirsin.</p>
     </div>
+  </dialog>
+
+  <dialog id="walk-dialog" class="sheet">
+    <form method="dialog" id="walk-form" class="sheet-inner">
+      <h3>Yürüyüş ekle</h3>
+      <p class="meta">Süre ve mesafeden birini boş bırakabilirsin; eksik olanı saatte 5 km hızla tahmin ederiz (~ ile gösterilir).</p>
+      <label class="row"><span>Gün</span><input type="date" id="walk-date" required></label>
+      <label class="row"><span>Saat<small>Yürüyüşün başladığı saat</small></span><input type="time" id="walk-time" required></label>
+      <label class="row"><span>Süre (dk)</span><input type="number" id="walk-min" min="1" max="600" inputmode="numeric"></label>
+      <label class="row"><span>Mesafe (km)</span><input type="text" id="walk-km" inputmode="decimal" placeholder="örn. 4,5"></label>
+      <p class="meta" id="walk-preview" role="status"></p>
+      <div class="sheet-actions">
+        <button type="submit" class="btn primary" id="walk-save">Ekle</button>
+        <button type="button" class="btn ghost" id="walk-close">Vazgeç</button>
+      </div>
+    </form>
   </dialog>
 
   <dialog id="share-dialog" class="sheet share-sheet">
