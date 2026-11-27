@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   BIKE_MINUTES, PROGRAMS, buildSteps, estimateKcal, loadPlans, loadSettings, programInfo, saveSettings, totalSeconds,
 } from '@/shared';
+import { WalkCard } from '@/ui/WalkCard';
 import { colors } from '@/theme';
 
 export default function Home() {
@@ -53,6 +54,7 @@ export default function Home() {
             <Text style={styles.cardMeta}>{c.meta}</Text>
           </Pressable>
         ))}
+        <WalkCard />
         {plans.length ? <Text style={styles.section}>Planlarım</Text> : null}
         {plans.map((p) => (
           <Pressable

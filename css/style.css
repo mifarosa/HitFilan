@@ -613,6 +613,7 @@ details.ex .variant { color: var(--muted); font-size: 13px; margin-top: 6px; }
 .cal-day .dots i, .cal-legend i { width: 5px; height: 5px; border-radius: 50%; display: block; }
 .dot-bike { background: var(--kind-bike); }
 .dot-strength { background: var(--kind-strength); }
+.dot-walk { background: var(--lvl-easy); }
 .cal-day.selected .dots i { background: var(--accent-ink); }
 
 .cal-wk-head { font-size: 13px; }
@@ -640,6 +641,7 @@ details.ex .variant { color: var(--muted); font-size: 13px; margin-top: 6px; }
 .list-head .chip { padding: 6px 12px; font-size: 13px; }
 .history-item { border-left: 4px solid var(--kind-bike); }
 .history-item.kind-strength { border-left-color: var(--kind-strength); }
+.history-item.kind-walk { border-left-color: var(--lvl-easy); }
 
 /* ---------- Goals ---------- */
 

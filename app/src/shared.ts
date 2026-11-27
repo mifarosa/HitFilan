@@ -9,6 +9,7 @@ import * as videoCore from '@shared/video-core.js';
 import * as storeJs from '@shared/store.js';
 import * as aiCore from '@shared/ai-core.js';
 import * as nutrition from '@shared/nutrition-core.js';
+import * as walkCore from '@shared/walk-core.js';
 
 /** One step of a workout, as built by buildSteps(). */
 export interface Step {
@@ -163,3 +164,11 @@ export const periodRange = nutrition.periodRange as (kind: 'day' | 'week' | 'mon
 export const periodTotals = nutrition.periodTotals as (a: {
   meals: Meal[]; history: Record<string, unknown>[]; settings: Settings; from: string; to: string; today?: string;
 }) => Totals;
+
+export interface WalkDetails { ok: boolean; error?: string; minutes: number; km: number; estimated: boolean; speed: number; kcal: number }
+export const walkDetails = walkCore.walkDetails as (a: { minutes: string | number; km: string | number; weightKg: number }) => WalkDetails;
+export const walkEntry = walkCore.walkEntry as (a: {
+  date: string; minutes: string | number; km: string | number; weightKg: number; now?: number;
+}) => Record<string, unknown> | null;
+export const isWalk = walkCore.isWalk as (e: Record<string, unknown> | undefined) => boolean;
+export const walkDistanceText = walkCore.walkDistanceText as (e: Record<string, unknown> | undefined) => string;
